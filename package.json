@@ -1,0 +1,7 @@
+{
+  "name": "fortimesh-rwanda-site",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "node src/build.mjs", "check": "node src/check.mjs" }
+}

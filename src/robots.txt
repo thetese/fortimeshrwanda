@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://fortimesh-rwanda.tangydaisy16.chatgpt.site/sitemap.xml
