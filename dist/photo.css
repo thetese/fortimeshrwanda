@@ -6,6 +6,9 @@
 .quote-aside-art{overflow:hidden}.quote-aside-art .photo{height:240px}
 .application-visual{overflow:hidden}.application-visual .photo{height:100%;min-height:200px}
 .about-hero{background-image:linear-gradient(90deg,rgba(17,33,27,.94),rgba(17,33,27,.6)),url('/photos/beam.jpg');background-size:cover;background-position:center}.about-hero .container{position:relative}
+.brand-logo-window{position:relative;display:block;flex:none;width:190px;height:67px;overflow:hidden;background:#fff}
+.brand-logo-window img{position:absolute;left:0;top:-63.4px;width:190px;height:190px;max-width:none}
 .photo-note{font-size:.78rem;opacity:.8}.credits-list{display:grid;gap:1rem;max-width:850px}.credits-list li{padding:1rem 0;border-bottom:1px solid #d9ddd4}.credits-list a{text-decoration:underline;text-underline-offset:3px}
 @media(max-width:900px){.detail-art-wrap{height:360px}}
+@media(max-width:760px){.brand-logo-window{width:170px;height:60px}.brand-logo-window img{width:170px;height:170px;top:-56.7px}}
 @media(max-width:700px){.detail-art-wrap{height:300px}.hero-art .photo{object-position:center}.feature-graphic .photo{object-position:center}}
