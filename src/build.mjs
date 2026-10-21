@@ -2,70 +2,974 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const root = path.resolve(import.meta.dirname, '..');
+const src = path.join(root, 'src');
 const dist = path.join(root, 'dist');
-const origin = 'https://fortimesh-rwanda.tangydaisy16.chatgpt.site';
+
+/* =========================================================================
+   Site configuration
+   Override `SITE_ORIGIN` at build time when deploying to a custom domain:
+     SITE_ORIGIN=https://fortimesh.rw npm run build
+   ========================================================================= */
+const site = {
+  name: 'FORTIMESH AND STEELS RWANDA LTD',
+  short: 'Fortimesh',
+  origin: (process.env.SITE_ORIGIN || 'https://fortimesh-rwanda.tangydaisy16.chatgpt.site').replace(/\/+$/, ''),
+  locality: 'Kimironko, Kigali, Rwanda',
+  address: 'KG 667 Street, Kimironko, Kigali, Rwanda',
+  hours: 'Mon – Sat: 8:00 AM – 6:00 PM CAT',
+  leadership: 'Mutuyimana Jean Bosco, Managing Director',
+  directory: 'https://pinkbazaar.in/service/fortimesh-and-steels-rwanda-ltd-113232/',
+  social: {
+    instagram: 'https://www.instagram.com/fortimesh_rwanda/',
+    instagramHandle: '@fortimesh_rwanda',
+  },
+  contact: {
+    phone: '+250 793 086 644',
+    whatsapp: '250793086644',
+    email: 'fortimeshrwanda@gmail.com',
+  },
+};
+const year = new Date().getFullYear();
+const buildDate = new Date().toISOString().slice(0, 10);
+
+/* =========================================================================
+   Content
+   ========================================================================= */
+const categories = [
+  { id: 'gabion-wire', name: 'Gabion & wire', blurb: 'Hexagonal gabion baskets, chain-link fencing, barbed wire and tying wire for civil works and perimeter security.' },
+  { id: 'steel', name: 'Steel & reinforcement', blurb: 'Deformed high-yield rebar, BRC mesh, hollow sections, I-beams and steel pipes for concrete and structural frames.' },
+  { id: 'services', name: 'Building services', blurb: 'Pressure plumbing pipework, drainage systems, electrical cables, conduits and distribution hardware.' },
+  { id: 'essentials', name: 'Construction essentials', blurb: 'Waterproofing admixtures (including Sika solutions), site hardware, fasteners and general building supplies.' },
+];
+const catName = (id) => categories.find((c) => c.id === id).name;
+
 const products = [
-  {slug:'gabion-mesh',name:'Gabion mesh',group:'Gabion & wire',number:'01',summary:'Mesh solutions for gabion baskets and site protection works.',description:'Gabion mesh is used to form stone-filled structures for retaining, erosion control and landscape applications. Share your project drawings, dimensions and preferred wire or coating requirements for a suitable quotation.',uses:['Retaining structures','Erosion control','Landscape works'],art:'gabion'},
-  {slug:'steel-wire',name:'Steel wire products',group:'Gabion & wire',number:'02',summary:'Wire materials for tying, reinforcement and fabrication needs.',description:'Steel wire products support a wide range of construction and fabrication tasks. Tell us the intended use, diameter, finish and quantity so the team can confirm a suitable option and current availability.',uses:['Tying and fixing','Fabrication','Site works'],art:'wire'},
-  {slug:'reinforcement-steel',name:'Reinforcement materials',group:'Steel & reinforcement',number:'03',summary:'Reinforcement materials for concrete construction.',description:'Reinforcement materials are part of the company’s listed supply range. Send the bar schedule or material list with grade, size, length and quantities for confirmation of available stock and pricing.',uses:['Foundations','Columns and beams','Slabs'],art:'rebar'},
-  {slug:'structural-steel',name:'Structural steel',group:'Steel & reinforcement',number:'04',summary:'Steel supply for structural and fabrication requirements.',description:'Structural steel supports frames and fabricated components in building and infrastructure work. Provide drawings, section profiles, lengths and quantities to request an accurate quotation.',uses:['Structural frames','Fabrication','Infrastructure'],art:'beam'},
-  {slug:'plumbing-materials',name:'Plumbing materials',group:'Building services',number:'05',summary:'Plumbing supplies for residential and commercial projects.',description:'Plumbing materials are included in Fortimesh’s published range. Share your bill of quantities, sizes, materials and site location so the team can verify the exact items available.',uses:['Water distribution','Drainage','Building services'],art:'pipe'},
-  {slug:'electrical-supplies',name:'Electrical supplies',group:'Building services',number:'06',summary:'Electrical materials for building and site installations.',description:'Electrical supplies are included in Fortimesh’s published range. Specify the item, rating, standard and quantity required so the team can verify availability and suitability.',uses:['Building installations','Power distribution','Site works'],art:'electric'},
-  {slug:'general-construction',name:'General construction materials',group:'Construction essentials',number:'07',summary:'Additional materials sourced for project requirements.',description:'Fortimesh’s published profile also describes a wider construction materials range. Send a material schedule and delivery location to check what can be supplied for your project.',uses:['Residential builds','Commercial projects','Civil works'],art:'blocks'}
+  {
+    slug: 'gabion-mesh', name: 'Gabion mesh', cat: 'gabion-wire', image: 'ai-gabion-hills', gallery: ['gabion'],
+    summary: 'Heavy-duty woven and welded gabion baskets and mattresses for retaining walls, slope stabilisation and erosion control.',
+    description: 'We supply double-twisted hexagonal woven and welded gabion baskets and mattresses engineered for Rwanda’s hillside terrain, road corridors and riverbanks. Available in heavy galvanised and PVC-coated finishes with matching selvedge and lacing wire. Share your project drawings, box dimensions and quantity to receive a fast, itemised quotation.',
+    specs: [
+      ['Standard box sizes', '2m × 1m × 1m · 1.5m × 1m × 1m · 3m × 1m × 1m · 2m × 1m × 0.5m'],
+      ['Mattress sizes', '3m × 2m × 0.3m · 6m × 2m × 0.3m (internal diaphragms at 1m centres)'],
+      ['Mesh aperture', '60 × 80 mm · 80 × 100 mm · 100 × 120 mm double-twisted hexagonal'],
+      ['Wire & coating', '2.7 mm – 3.9 mm mesh/selvedge wire; heavy zinc galvanised or grey/green PVC coated'],
+    ],
+    uses: ['Hillside retaining walls & terracing', 'Road embankment & culvert protection', 'Riverbank & channel erosion control', 'Architectural landscape walls'],
+    request: ['Basket or mattress dimensions (L × W × H)', 'Mesh aperture (e.g. 80×100 mm) and internal diaphragms', 'Wire diameter and finish (heavy galvanised or PVC-coated)', 'Total unit count and site delivery location'],
+  },
+  {
+    slug: 'steel-wire', name: 'Steel wire products', cat: 'gabion-wire', image: 'wire', gallery: ['ai-steel-yard'],
+    summary: 'Galvanised chain-link fencing, barbed wire, binding wire and heavy-duty coils for site fixing, fencing and fabrication.',
+    description: 'From soft annealed black binding wire for daily rebar tying to galvanised chain-link mesh and high-tensile barbed wire for perimeter fencing, we stock reliable wire products for contractors and fabricators across Rwanda. Tell us the gauge, coating, roll length and quantity required for immediate stock confirmation.',
+    specs: [
+      ['Binding / tying wire', 'Soft annealed black or galvanised wire (1.2 mm – 2.0 mm) in 20 kg – 25 kg coils'],
+      ['Chain-link fencing', 'Galvanised and PVC-coated rolls; heights 1.2 m – 2.4 m; apertures 50 mm – 75 mm'],
+      ['Security wire', 'Double-strand galvanised barbed wire and concertina razor wire coils'],
+      ['General fabrication wire', 'Plain hard-drawn and heavy galvanised steel wire (2.0 mm – 4.0 mm)'],
+    ],
+    uses: ['Rebar tying and formwork fixing', 'Perimeter & estate chain-link fencing', 'Agricultural and highway boundary security', 'Gabion lacing and general steel fabrication'],
+    request: ['Product type (binding wire, chain-link, barbed wire, plain coil)', 'Wire diameter / gauge and roll height or length', 'Finish: black annealed, galvanised or PVC-coated', 'Quantity in rolls, coils or metric tonnes'],
+  },
+  {
+    slug: 'reinforcement-steel', name: 'Reinforcement materials', cat: 'steel', image: 'rebar', gallery: ['feature', 'hero-site'],
+    summary: 'Ribbed high-yield deformed steel bars (rebar) and welded BRC mesh for structural concrete foundations, columns and slabs.',
+    description: 'We supply high-yield ribbed reinforcement steel bars and welded BRC mesh sheets/rolls for residential, commercial and civil concrete construction. Send us your structural engineer’s bar bending schedule or material list—specifying bar diameters, grade and tonnage—for competitive pricing and coordinated site delivery.',
+    specs: [
+      ['Bar diameters', 'D8, D10, D12, D16, D20, D25 and D32 mm deformed high-yield bars'],
+      ['Standard bar length', '12 m straight lengths (bundle or piece supply)'],
+      ['Steel grades', 'High-yield weldable reinforcement steel (BS 4449 / Grade 500B / 460B equivalent)'],
+      ['Welded reinforcement mesh', 'BRC mesh rolls and sheets (A98, A142, A193, A252, A393) + annealed tying wire'],
+    ],
+    uses: ['Pad, strip and raft foundations', 'Reinforced concrete columns, shear walls and beams', 'Suspended floor slabs and ground-bearing slabs', 'Bridges, culverts and retaining structures'],
+    request: ['Bar schedule or itemised diameter breakdown (D8 – D32)', 'Required steel grade and standard compliance', 'BRC mesh ref numbers or sheet/roll counts if needed', 'Total tonnage or bar count and phased delivery dates'],
+  },
+  {
+    slug: 'structural-steel', name: 'Structural steel', cat: 'steel', image: 'beam', gallery: ['ai-steel-yard'],
+    summary: 'I-beams, H-beams, square and rectangular hollow sections (SHS/RHS), angle iron, channels and galvanised steel pipes.',
+    description: 'Our structural steel range supports roof trusses, warehouse portal frames, multi-storey steel structures and custom fabrication work. We supply hot-rolled open sections alongside cold-formed hollow sections and galvanised circular pipes. Share your fabrication drawings or cutting list for a complete section-by-section quote.',
+    specs: [
+      ['Hollow sections (SHS / RHS)', 'Square (20×20 mm to 150×150 mm) and rectangular (40×20 mm to 200×100 mm), 1.5 mm – 6.0 mm wall'],
+      ['Open sections & beams', 'Universal I-beams (IPE / UB), H-beams (HEB / UC), UPN/C-channels and Lipped Z/C purlins'],
+      ['Merchant bar & plates', 'Equal angle iron (25×25 mm to 100×100 mm), flat bars and mild steel/chequered plates'],
+      ['Steel pipes & tubes', 'Black and hot-dip galvanised circular steel pipes (CHS) in light, medium and heavy classes'],
+    ],
+    uses: ['Warehouse, factory and commercial roof trusses', 'Multi-storey structural steel frames and mezzanines', 'Canopies, staircases, gates and architectural steelwork', 'Signage gantries, towers and civil infrastructure'],
+    request: ['Section profile (SHS, RHS, IPE, HEB, Angle, Channel, CHS pipe)', 'Cross-section dimensions and wall thickness (mm)', 'Steel grade (e.g. S275 / S355) and finish (mill black or galvanised)', 'Standard 6 m / 12 m lengths and quantity per profile'],
+  },
+  {
+    slug: 'plumbing-materials', name: 'Plumbing materials', cat: 'services', image: 'pipe', gallery: [],
+    summary: 'PPR, uPVC, HDPE and GI pipes, pressure fittings, valves and drainage supplies for building and civil water systems.',
+    description: 'We supply durable plumbing and water-distribution materials for housing estates, commercial complexes and public infrastructure across Rwanda. Submit your plumbing bill of quantities—covering supply lines, waste drainage and control valves—so our team can price every line item accurately.',
+    specs: [
+      ['Hot & cold water supply', 'PPR pipes and fusion fittings (PN16 / PN20, DN20 – DN110 mm)'],
+      ['Drainage & soil waste', 'uPVC soil, waste, vent and underground drainage pipes (DN32 – DN315 mm) with fittings'],
+      ['Mainline & external water', 'HDPE pressure coils/bars (PN10 / PN16) and threaded galvanised iron (GI) pipes'],
+      ['Flow control & ancillaries', 'Brass and cast-iron gate/ball/check valves, water meter fittings, thread sealants and clamps'],
+    ],
+    uses: ['Potable hot and cold water distribution', 'Foul sewer and stormwater drainage networks', 'Water storage tank manifolds and pump rooms', 'Commercial washrooms and site water reticulation'],
+    request: ['Plumbing bill of quantities (BoQ) or material take-off', 'Pipe material (PPR, uPVC, HDPE, GI), nominal diameter and PN pressure rating', 'Matching elbows, tees, reducers, couplings and valves', 'Delivery site and required delivery schedule'],
+  },
+  {
+    slug: 'electrical-supplies', name: 'Electrical supplies', cat: 'services', image: 'electric', gallery: [],
+    summary: 'Power cables, conduits, distribution boards, circuit protection and earthing hardware for building and site installations.',
+    description: 'Equip residential developments, commercial buildings and construction sites with dependable electrical installation materials. We supply cables, containment conduits, distribution switchgear and earthing components matched to your electrical engineer’s schedule.',
+    specs: [
+      ['Wiring & power cables', 'Single-core and multi-core PVC/XLPE copper cables (1.5 mm² – 35 mm²+) and SWA armoured cables'],
+      ['Cable containment', 'Heavy-duty uPVC and galvanised steel conduits (20 mm – 50 mm), surface trunking and cable trays'],
+      ['Distribution & protection', 'Consumer units, 3-phase distribution boards, MCBs, MCCBs, RCDs and isolator switches'],
+      ['Earthing & accessories', 'Copper-bond earth rods, earth mats, clamps, weatherproof junction boxes, switches and sockets'],
+    ],
+    uses: ['First-fix and second-fix building electrical wiring', 'Sub-main power distribution and switchgear panels', 'Temporary site power and exterior lighting networks', 'Lightning protection and electrical earthing systems'],
+    request: ['Itemised electrical schedule or BoQ', 'Cable cross-section (mm²), core count and insulation/armouring type', 'Ratings, pole counts and preferred standards for switchgear', 'Quantities in coils, metres or units'],
+  },
+  {
+    slug: 'general-construction', name: 'General construction materials', cat: 'essentials', image: 'blocks', gallery: [],
+    summary: 'Waterproofing admixtures (including Sika solutions), fasteners, formwork hardware and essential site supplies.',
+    description: 'Consolidate your procurement by sourcing essential construction chemicals, waterproofing admixtures and site hardware alongside your steel and gabion order. We stock trusted waterproofing products such as Sika Hydrofuge, bonding agents, fasteners and daily site consumables to keep your project moving on schedule.',
+    specs: [
+      ['Waterproofing & chemicals', 'Sika Hydrofuge water-repellent admixtures, mortar plasticisers, concrete curing and bonding agents'],
+      ['Fasteners & fixings', 'Common wire nails, roofing nails, masonry anchors, high-tensile bolts, nuts and threaded rods'],
+      ['Formwork & masonry', 'Tie rods, wing nuts, damp-proof course (DPC) membranes, polythene sheeting and brickforce mesh'],
+      ['Site consumables', 'Cutting & grinding discs, welding electrodes, protective hardware and general builder’s supplies'],
+    ],
+    uses: ['Basement, tank and wet-area concrete waterproofing', 'Masonry, plastering and structural concrete works', 'Formwork assembly and roof carpentry fixing', 'Consolidated multi-item site procurement'],
+    request: ['Consolidated material schedule or BoQ section', 'Specific brand or product grade (e.g. Sika Hydrofuge jerrycan size)', 'Quantities and packaging units (kg, litres, boxes, rolls)', 'Site location in Kigali or across Rwanda'],
+  },
+].map((p, i) => ({ ...p, n: String(i + 1).padStart(2, '0') }));
+const bySlug = (s) => products.find((p) => p.slug === s);
+
+const applications = [
+  { n: '01', label: 'Civil & hillside engineering', title: 'Hold the ground.', image: 'ai-gabion-hills', products: ['gabion-mesh', 'steel-wire'],
+    text: 'Rwanda’s terraced hills and road corridors demand durable slope protection. We supply heavy galvanised and PVC-coated gabion baskets, mattresses, lacing wire and perimeter chain-link fencing built to withstand heavy rainfall and earth pressure.' },
+  { n: '02', label: 'Reinforced concrete & steel frames', title: 'Build the frame.', image: 'beam', products: ['reinforcement-steel', 'structural-steel'],
+    text: 'From D8–D32 deformed rebar and BRC mesh in the foundation to I-beams, hollow sections and galvanised pipes in the roof structure, we deliver structural steel against your engineer’s bar schedule and cutting list.' },
+  { n: '03', label: 'Mechanical & electrical services', title: 'Make it work.', image: 'pipe', products: ['plumbing-materials', 'electrical-supplies'],
+    text: 'Complete your building envelope with PPR/uPVC/HDPE pipework, valves, power cables, conduits and distribution switchgear—sourced directly from your mechanical and electrical bills of quantities.' },
+  { n: '04', label: 'Waterproofing & site essentials', title: 'Keep the site supplied.', image: 'blocks', products: ['general-construction'],
+    text: 'Combine your primary steel delivery with Sika waterproofing chemicals, tie wire, nails, welding consumables and formwork hardware to reduce transport trips and keep crews productive.' },
 ];
 
-const icon = (name) => ({arrow:'<path d="M4 12h15m-6-6 6 6-6 6"/>',diagonal:'<path d="M5 19 19 5M8 5h11v11"/>',menu:'<path d="M4 7h16M4 12h16M4 17h16"/>',close:'<path d="M5 5 19 19M19 5 5 19"/>',check:'<path d="m4 12 5 5L20 6"/>',location:'<path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2"/>',copy:'<rect x="8" y="8" width="12" height="12" rx="1"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>'}[name]||'');
-const svg = (name,cls='') => `<svg class="${cls}" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${icon(name)}</svg>`;
-const art = (type,extra='') => {
- const drawings = {
-  gabion:'<defs><pattern id="mesh" width="20" height="16" patternUnits="userSpaceOnUse"><path d="M0 8 10 0 20 8 10 16Z" fill="none" stroke="#718078" stroke-width="1.4"/></pattern></defs><path d="m90 95 170-45 125 55-172 52Z" fill="#d5ddd2"/><path d="m90 95 123 62v130L90 228Z" fill="#9daea4"/><path d="m213 157 172-52v124l-172 58Z" fill="#bbc8b9"/><path d="m90 95 170-45 125 55-172 52Z" fill="url(#mesh)"/><path d="m90 95 123 62v130L90 228Z" fill="url(#mesh)"/><path d="m213 157 172-52v124l-172 58Z" fill="url(#mesh)"/><path d="m90 95 170-45 125 55-172 52v130l-172 58-123-59Z" fill="none" stroke="#34423e" stroke-width="4"/>',
-  wire:'<ellipse cx="220" cy="176" rx="130" ry="89" fill="#aebbb4"/><ellipse cx="220" cy="176" rx="103" ry="66" fill="#e3e7df"/><ellipse cx="220" cy="176" rx="70" ry="42" fill="#aebbb4"/><ellipse cx="220" cy="176" rx="48" ry="25" fill="#e3e7df"/><path d="M88 177c2-65 62-116 134-116s132 52 132 115-60 117-132 117S88 242 88 177Zm27 0c0 54 48 96 107 96s106-42 106-96-47-95-106-95-107 42-107 95Z" fill="none" stroke="#52665f" stroke-width="9"/><path d="M344 195c35 20 51 46 65 83" fill="none" stroke="#52665f" stroke-width="8"/>',
-  rebar:'<g stroke="#53645c" stroke-width="19" stroke-linecap="round"><path d="M75 246 306 78"/><path d="M114 272 345 104"/><path d="M154 294 385 126"/></g><g stroke="#aab6ad" stroke-width="4"><path d="m112 220 21 19m15-45 22 20m15-46 22 20m15-46 22 20m15-46 22 20m15-46 22 20M150 247l22 20m15-46 22 20m15-46 22 20m15-46 22 20m15-46 22 20"/></g>',
-  beam:'<path d="m128 68 44 18v188l-44-19Z" fill="#7e9187"/><path d="m172 86 157-31 42 18-156 32Z" fill="#aebeb2"/><path d="m172 86 43 19v150l-43 19Z" fill="#bdc9bc"/><path d="m215 105 156-32v168l-156 32Z" fill="#83998b"/><path d="m128 255 44 19 157-33 42 17-158 35-85-19Z" fill="#596d64"/><path d="m128 68 44 18 157-31 42 18-156 32v168l156-32v17l-158 35-85-19v-19l44 19V86l-44-18Z" fill="none" stroke="#33453d" stroke-width="4"/>',
-  pipe:'<path d="M95 116h130v42H95z" fill="#b4c3b8"/><path d="M225 116c33 0 59 26 59 59v82h-43v-82c0-9-7-17-16-17Z" fill="#839b8e"/><ellipse cx="263" cy="258" rx="22" ry="8" fill="#4a6054"/><path d="M95 116h130v42H95m130-42c33 0 59 26 59 59v82h-43v-82c0-9-7-17-16-17" fill="none" stroke="#33483e" stroke-width="4"/><path d="M149 116v42m27-42v42" stroke="#e5e8df" stroke-width="5"/>',
-  electric:'<path d="M124 74h198v202H124z" rx="5" fill="#a6b7aa" stroke="#40564a" stroke-width="4"/><path d="M154 106h138v137H154z" fill="#e9e9dc"/><path d="M184 106v137m50-137v137" stroke="#869e8b" stroke-width="3"/><path d="M172 141h25v56h-25zm51 0h25v56h-25z" fill="#526b5a"/><path d="M178 150h13m38 0h13" stroke="#e6ebdf" stroke-width="3"/><circle cx="275" cy="216" r="7" fill="#d57738"/>',
-  blocks:'<path d="m104 190 80-42 91 38-80 43Z" fill="#b9c4b5"/><path d="m104 190 91 39v58l-91-40Z" fill="#7d9384"/><path d="m195 229 80-43v58l-80 43Z" fill="#9eae9f"/><path d="m175 112 80-42 91 39-80 43Z" fill="#d4dacb"/><path d="m175 112 91 40v58l-91-40Z" fill="#90a28f"/><path d="m266 152 80-43v58l-80 43Z" fill="#aebbab"/><path d="m104 190 80-42 91 38v58l-80 43-91-40Zm71-78 80-42 91 39v58l-80 43-91-40Z" fill="none" stroke="#45594d" stroke-width="3"/>'
- };
- return `<svg class="product-art ${extra}" viewBox="0 0 470 350" role="img" aria-label="Illustration of ${type==='rebar'?'reinforcement steel':type==='blocks'?'construction materials':type}"><rect width="470" height="350" fill="#e8ece3"/><circle cx="384" cy="72" r="96" fill="#d9e1d5"/><path d="M0 283h470M0 315h470" stroke="#d6ded3" stroke-width="2"/>${drawings[type]}</svg>`;
-};
-const photoAlt = {
- 'hero-site':'Construction workers on a reinforcement steel grid',
- gabion:'Rock-filled gabion mesh',wire:'Coiled steel wire',rebar:'Stacked reinforcement steel bars',
- beam:'Structural steel frame under construction',pipe:'Plumbing pipework on a building exterior',
- electric:'Electrical cable installation in progress',blocks:'Construction materials at a building site',
- feature:'Worker standing on a reinforcement steel grid'
-};
-const photo = (type,cls='',lazy=true) => `<img class="photo ${cls}" src="/photos/${type}.jpg" alt="Representative photograph: ${photoAlt[type]}" width="1100" height="800" loading="${lazy?'lazy':'eager'}" decoding="async">`;
-const nav = (active) => `<a class="skip-link" href="#main">Skip to content</a><div class="utility"><div class="container utility-inner"><span>Built for progress across Rwanda</span><span>Kigali, Rwanda</span></div></div><header class="site-header"><div class="container header-inner"><a class="brand" href="/" aria-label="Fortimesh home"><span class="brand-logo-window"><img src="/logo.png" alt="" width="1024" height="1024"></span></a><button class="menu-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="main-nav">${svg('menu')}</button><nav id="main-nav" class="main-nav" aria-label="Main navigation"><a href="/" ${active==='home'?'aria-current="page"':''}>Home</a><a href="/products/" ${active==='products'?'aria-current="page"':''}>Products</a><a href="/applications/" ${active==='applications'?'aria-current="page"':''}>Applications</a><a href="/about/" ${active==='about'?'aria-current="page"':''}>About</a><a href="/contact/" ${active==='contact'?'aria-current="page"':''}>Contact</a><a class="button button-small button-dark" href="/quote/">Request a quote ${svg('diagonal')}</a></nav></div></header>`;
-const footer = `<footer class="site-footer"><div class="container"><div class="footer-main"><div><a class="brand brand-light" href="/" aria-label="Fortimesh home"><span class="brand-logo-window"><img src="/logo.png" alt="" width="1024" height="1024"></span></a><p>Steel, gabion solutions and construction materials for the work that moves Rwanda forward.</p></div><div><h3>Explore</h3><a href="/products/">Products</a><a href="/applications/">Applications</a><a href="/about/">About Fortimesh</a><a href="/image-credits/">Image credits</a></div><div><h3>Get in touch</h3><a href="/quote/">Prepare a quote request</a><a href="/contact/">Contact information</a><p>Kigali, Rwanda</p></div></div><div class="footer-bottom"><span>© ${new Date().getFullYear()} FORTIMESH AND STEELS RWANDA LTD.</span><span>Built with care for every project.</span></div></div></footer>`;
-const cta = `<section class="cta-band"><div class="container cta-inner"><div><span class="eyebrow light">START WITH YOUR MATERIAL LIST</span><h2>Let’s get your project moving.</h2><p>Share your quantities, dimensions and delivery location. A clear request makes sourcing simpler.</p></div><a class="button button-light" href="/quote/">Prepare your request ${svg('diagonal')}</a></div></section>`;
-const card = p => `<a class="product-card" href="/products/${p.slug}/"><div class="card-art">${photo(p.art)}</div><div class="card-content"><div class="card-meta"><span>${p.group}</span><span>${p.number} / 07</span></div><h3>${p.name}</h3><p>${p.summary}</p><span class="text-link">Explore product ${svg('arrow')}</span></div></a>`;
-const home = `<main id="main"><section class="hero"><div class="container hero-grid"><div class="hero-copy"><span class="eyebrow"><span class="eyebrow-line"></span>RWANDA’S CONSTRUCTION SUPPLY PARTNER</span><h1>Strength for<br><em>what’s next.</em></h1><p>Steel, gabion solutions and essential building materials for projects taking shape across Rwanda.</p><div class="hero-actions"><a class="button button-orange" href="/products/">Explore our products ${svg('diagonal')}</a><a class="button button-outline" href="/quote/">Request a quote ${svg('arrow')}</a></div><div class="hero-note"><span class="note-rule"></span>Supplying contractors, engineers, developers and individual builders.</div></div><div class="hero-visual"><div class="hero-art"><div class="hero-topline"><span>MATERIALS / ON SITE</span><span>01—07</span></div>${photo('hero-site','hero-photo',false)}<div class="hero-visual-bottom"><span>REINFORCEMENT AT WORK</span><span>REPRESENTATIVE IMAGE</span></div></div><div class="hero-side-label">MATERIALS THAT MATTER / RWANDA</div></div></div></section><div class="trust-strip"><div class="container trust-inner"><span>STEEL & REINFORCEMENT</span><span>GABION & WIRE</span><span>BUILDING SERVICES</span><span>CONSTRUCTION ESSENTIALS</span></div></div><section class="section products-section"><div class="container"><div class="section-heading"><div><span class="eyebrow">WHAT WE SUPPLY</span><h2>Materials for every<br>critical stage.</h2></div><div class="section-heading-aside"><p>From groundworks to building services, explore the product families listed in Fortimesh’s published company profile.</p><a class="text-link" href="/products/">View all products ${svg('arrow')}</a></div></div><div class="product-grid">${products.slice(0,6).map(card).join('')}</div></div></section><section class="feature-section"><div class="container feature-grid"><div class="feature-graphic"><span>01 / THE FORTIMESH APPROACH</span>${photo('feature','feature-photo')}<strong>SUPPLY<br>WITH PURPOSE.</strong></div><div class="feature-copy"><span class="eyebrow">A PRACTICAL PARTNER</span><h2>Focused on the materials behind lasting work.</h2><p>Fortimesh’s published profile centers on quality steel products, gabion solutions and construction materials for residential, commercial and infrastructure projects. We’ve organized the range here so you can find a starting point and request the details that matter to your job.</p><ul class="checked-list"><li>${svg('check')} Product families clearly grouped</li><li>${svg('check')} Quotes built around your specifications</li><li>${svg('check')} Supply requirements for projects across Rwanda</li></ul><a class="button button-dark" href="/about/">Get to know us ${svg('diagonal')}</a></div></div></section><section class="section applications-section"><div class="container"><div class="section-heading compact"><div><span class="eyebrow">WHERE MATERIALS WORK</span><h2>Built around real site needs.</h2></div><a class="text-link" href="/applications/">Explore applications ${svg('arrow')}</a></div><div class="application-grid"><article><span>01 / CIVIL WORKS</span><h3>Ground & slope</h3><p>Gabion mesh and wire materials for specified erosion-control and retaining applications.</p></article><article><span>02 / STRUCTURE</span><h3>Concrete & frames</h3><p>Reinforcement and structural steel requirements tied to drawings and schedules.</p></article><article><span>03 / BUILDING SERVICES</span><h3>Systems & fit-out</h3><p>Plumbing and electrical materials specified for building works.</p></article></div></div></section>${cta}</main>`;
-const catalog = `<main id="main"><section class="page-hero"><div class="container"><span class="eyebrow">PRODUCT RANGE</span><h1>Materials with a job to do.</h1><p>Explore Fortimesh’s published product families. Exact specifications, brands, quantities and current availability are confirmed through a quote.</p></div></section><section class="section catalog-section"><div class="container"><div class="catalog-toolbar"><span>EXPLORE 07 PRODUCT FAMILIES</span><label>Filter by category <select id="category-filter"><option value="all">All categories</option><option value="Gabion & wire">Gabion & wire</option><option value="Steel & reinforcement">Steel & reinforcement</option><option value="Building services">Building services</option><option value="Construction essentials">Construction essentials</option></select></label></div><div class="product-grid catalog-grid">${products.map(card).join('')}</div><p class="catalog-note">Products shown represent published supply categories, not a live inventory list. Confirm grades, sizes and availability before ordering.</p></div></section>${cta}</main>`;
-const productPage = p => `<main id="main"><div class="container breadcrumb"><a href="/">Home</a><span>/</span><a href="/products/">Products</a><span>/</span><span>${p.name}</span></div><section class="detail-hero"><div class="container detail-grid"><div class="detail-art-wrap">${photo(p.art)}</div><div class="detail-copy"><span class="eyebrow">${p.group.toUpperCase()} / ${p.number}</span><h1>${p.name}</h1><p class="detail-intro">${p.summary}</p><p>${p.description}</p><div class="detail-actions"><a class="button button-orange" href="/quote/?product=${p.slug}">Request a quote ${svg('diagonal')}</a><a class="text-link" href="/products/">All products ${svg('arrow')}</a></div><span class="detail-disclaimer">Representative photograph · Specifications and stock require confirmation</span></div></div></section><section class="section detail-info"><div class="container detail-info-grid"><div><span class="eyebrow">COMMON APPLICATIONS</span><h2>Where it fits.</h2></div><div class="use-list">${p.uses.map((u,i)=>`<div><span>0${i+1}</span><strong>${u}</strong></div>`).join('')}</div></div></section><section class="section related-section"><div class="container"><div class="section-heading compact"><div><span class="eyebrow">KEEP EXPLORING</span><h2>Related materials.</h2></div></div><div class="product-grid related-grid">${products.filter(x=>x.slug!==p.slug).slice(0,3).map(card).join('')}</div></div></section>${cta}</main>`;
-const about = `<main id="main"><section class="page-hero about-hero"><div class="container"><span class="eyebrow">ABOUT FORTIMESH</span><h1>Strength that secures your future.</h1><p>A Rwanda-based supplier focused on steel, gabion solutions and construction materials for the projects that shape our communities.</p></div></section><section class="section"><div class="container about-grid"><div class="about-statement"><span class="eyebrow">OUR FOCUS</span><h2>Reliable materials.<br>Practical service.</h2></div><div class="prose"><p>FORTIMESH AND STEELS RWANDA LTD describes its work as supplying steel products, gabion solutions and a broad range of construction materials. Its published company profile names contractors, engineers, developers, institutions and individual clients among those it serves across Rwanda.</p><p>Whether your requirement starts with a drawing, a bill of quantities or a straightforward material list, a clear specification is the best first step. This site helps you identify the relevant product family and prepare that request.</p><a class="text-link" href="/products/">Explore the product range ${svg('arrow')}</a></div></div></section><section class="principles-section"><div class="container"><span class="eyebrow light">HOW TO WORK WITH US</span><h2>From requirement to request.</h2><div class="principle-grid"><article><span>01</span><h3>Define the need</h3><p>Share the item, application, dimensions, grade and quantity where known.</p></article><article><span>02</span><h3>Confirm the details</h3><p>Check available specifications, current stock and pricing before ordering.</p></article><article><span>03</span><h3>Plan delivery</h3><p>Include the project location and timing so logistics can be discussed.</p></article></div></div></section>${cta}</main>`;
-const applications = `<main id="main"><section class="page-hero"><div class="container"><span class="eyebrow">APPLICATIONS</span><h1>For the places taking shape.</h1><p>Fortimesh’s published range spans civil works, structures and building services. These are typical material applications, not a portfolio of completed projects.</p></div></section><section class="section"><div class="container"><div class="application-detail"><div class="application-number">01 / CIVIL & LANDSCAPE</div><div><h2>Hold the ground.</h2><p>Gabion mesh and steel wire can be specified for retaining, erosion-control and landscape work. Project drawings and material requirements guide the quote.</p><a class="text-link" href="/products/gabion-mesh/">Explore gabion mesh ${svg('arrow')}</a></div><div class="application-visual">${photo('gabion')}</div></div><div class="application-detail"><div class="application-number">02 / BUILDING STRUCTURE</div><div><h2>Build the frame.</h2><p>Reinforcement and structural steel requirements are best shared as schedules or drawings, with grades, lengths and quantities clearly identified.</p><a class="text-link" href="/products/reinforcement-steel/">Explore reinforcement ${svg('arrow')}</a></div><div class="application-visual">${photo('beam')}</div></div><div class="application-detail"><div class="application-number">03 / BUILDING SERVICES</div><div><h2>Make it work.</h2><p>Plumbing and electrical materials support the systems inside residential, commercial and institutional buildings. Request exact items against your bill of quantities.</p><a class="text-link" href="/products/plumbing-materials/">Explore plumbing ${svg('arrow')}</a></div><div class="application-visual">${photo('pipe')}</div></div></div></section>${cta}</main>`;
-const credits = `<main id="main"><section class="page-hero"><div class="container"><span class="eyebrow">IMAGE CREDITS</span><h1>Photography with context.</h1><p>Images on this site show representative construction materials and work. They do not depict verified Fortimesh stock, staff, facilities or completed projects.</p></div></section><section class="section"><div class="container"><h2>Photo sources</h2><ul class="credits-list"><li>Construction site hero — <a href="https://www.pexels.com/photo/workers-at-a-construction-site-11580364/">Pexels</a></li><li>Gabion mesh — <a href="https://unsplash.com/photos/gabion-wall-filled-with-light-colored-rocks-Cmkb8xnGmlE">Unsplash</a></li><li>Steel wire — <a href="https://unsplash.com/photos/a-close-up-of-a-coil-of-wire-9y6hRUIpifY">Unsplash</a></li><li>Reinforcement steel — <a href="https://www.pexels.com/photo/gray-metal-bars-in-close-up-shot-5623179/">Pexels</a></li><li>Structural steel — <a href="https://www.pexels.com/photo/metal-beams-in-a-construction-site-3818947/">Pexels</a></li><li>Plumbing — <a href="https://www.pexels.com/photo/pipes-instalation-on-building-wall-12778827/">Pexels</a></li><li>Electrical work — <a href="https://www.pexels.com/photo/construction-workers-installing-cables-at-train-station-36289775/">Pexels</a></li><li>General construction materials — <a href="https://www.pexels.com/photo/concrete-construction-site-with-building-materials-36162732/">Pexels</a></li><li>Feature photograph — <a href="https://www.pexels.com/photo/builder-standing-on-rebar-at-construction-site-19407552/">Pexels</a></li></ul></div></section></main>`;
-const contact = `<main id="main"><section class="page-hero"><div class="container"><span class="eyebrow">CONTACT</span><h1>Start the conversation.</h1><p>Tell us what you need and prepare a clear material request. Direct company contact details are being confirmed for this preview.</p></div></section><section class="section"><div class="container contact-grid"><div><span class="eyebrow">FIND US</span><h2>Based in Kigali.<br>Serving Rwanda.</h2><p>Fortimesh is publicly listed in Kigali, Rwanda. Confirm the exact visit address with the company before travelling.</p><div class="contact-location">${svg('location')}<span><strong>Kigali, Rwanda</strong><small>Business location</small></span></div><a class="text-link" href="https://pinkbazaar.in/service/fortimesh-and-steels-rwanda-ltd-113232/" target="_blank" rel="noopener noreferrer">View public directory listing ${svg('diagonal')}</a></div><div class="contact-panel"><span class="eyebrow">HAVE A MATERIAL LIST?</span><h3>Make the request easy to answer.</h3><p>Include your required products, sizes or grades, quantities, delivery location and expected timeline. The quote composer will format it for sharing.</p><a class="button button-orange" href="/quote/">Prepare a quote request ${svg('diagonal')}</a><small>There is no online submission endpoint in this preview. You can copy or share your request after preparing it.</small></div></div></section>${cta}</main>`;
-const quote = `<main id="main"><section class="page-hero quote-hero"><div class="container"><span class="eyebrow">REQUEST A QUOTE</span><h1>Tell us what the job needs.</h1><p>Prepare a structured request you can copy or share. Product specifications and availability are confirmed directly with Fortimesh.</p></div></section><section class="section"><div class="container quote-grid"><form id="quote-form" class="quote-form"><div class="form-heading"><span>01 / YOUR REQUIREMENT</span><h2>Material details</h2></div><div class="form-row"><label for="product">Product family <span>*</span><select id="product" name="product" required><option value="">Select a product</option>${products.map(p=>`<option value="${p.slug}">${p.name}</option>`).join('')}</select></label><label for="quantity">Quantity / units <span>*</span><input id="quantity" name="quantity" placeholder="e.g. 20 rolls, 3 tonnes" required maxlength="100"></label></div><label for="specification">Sizes, grade or specification <span>*</span><textarea id="specification" name="specification" rows="4" placeholder="Include dimensions, material grade, coating, standards or a bill of quantities reference" required maxlength="1200"></textarea></label><div class="form-heading second"><span>02 / PROJECT CONTEXT</span><h2>Delivery & contact</h2></div><div class="form-row"><label for="location">Delivery location <span>*</span><input id="location" name="location" placeholder="District or site location" required maxlength="150"></label><label for="timeline">When do you need it?<input id="timeline" name="timeline" placeholder="Approximate date or timeframe" maxlength="100"></label></div><div class="form-row"><label for="name">Your name <span>*</span><input id="name" name="name" autocomplete="name" required maxlength="100"></label><label for="contact">Your contact <span>*</span><input id="contact" name="contact" placeholder="Phone or email for a reply" required maxlength="150"></label></div><button class="button button-orange form-submit" type="submit">Prepare request ${svg('arrow')}</button><p class="form-note">Preparing the request does not send it. Review the generated message before sharing.</p></form><aside class="quote-aside"><span class="eyebrow">A BETTER REQUEST</span><h3>Useful details to include</h3><ul class="checked-list"><li>${svg('check')} Product name and intended use</li><li>${svg('check')} Size, grade, finish or standard</li><li>${svg('check')} Quantity and required units</li><li>${svg('check')} Site location and timing</li></ul><div class="quote-aside-art">${photo('rebar')}</div></aside></div><div class="container"><section id="quote-result" class="quote-result" hidden aria-live="polite"><div><span class="eyebrow">YOUR REQUEST IS READY</span><h2>Review and share.</h2><p>Copy the message or share it with your known Fortimesh contact. An official phone or inbox has not yet been verified for direct submission.</p></div><pre id="quote-message"></pre><div class="result-actions"><button id="copy-request" class="button button-dark" type="button">${svg('copy')} Copy request</button><a id="whatsapp-request" class="button button-outline" href="#" target="_blank" rel="noopener noreferrer">Open WhatsApp ${svg('diagonal')}</a><button id="share-request" class="button button-outline" type="button">Share request ${svg('diagonal')}</button></div><p id="copy-status" role="status"></p></section></div></section></main>`;
+const steps = [
+  { title: 'Send your schedule', text: 'Share your bill of quantities, bar bending schedule, drawings or itemised material list via our quote tool or WhatsApp.' },
+  { title: 'Receive itemised pricing', text: 'Our Kimironko sales desk verifies stock availability, technical grades and unit pricing for your exact specification.' },
+  { title: 'Coordinate site delivery', text: 'Collect from our Kigali stockyard on KG 667 Street or schedule direct dispatch to your project site anywhere in Rwanda.' },
+];
 
-function page(title,description,body,active,pathName='/') {
- const url = origin + pathName;
- const schema = JSON.stringify({'@context':'https://schema.org','@type':'Organization',name:'FORTIMESH AND STEELS RWANDA LTD',url:origin,areaServed:{'@type':'Country',name:'Rwanda'},logo:origin+'/logo.png',address:{'@type':'PostalAddress',addressLocality:'Kigali',addressCountry:'RW'}});
- return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#16231f"><title>${title} | FORTIMESH AND STEELS RWANDA LTD</title><meta name="description" content="${description}"><link rel="canonical" href="${url}"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><meta property="og:type" content="website"><meta property="og:title" content="${title} | FORTIMESH"><meta property="og:description" content="${description}"><meta property="og:url" content="${url}"><meta property="og:site_name" content="FORTIMESH AND STEELS RWANDA LTD"><link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/photo.css"><meta property="og:image" content="${origin}/photos/hero-site.jpg"><script type="application/ld+json">${schema}</script><script src="/app.js" defer></script></head><body>${nav(active)}${body}${footer}</body></html>`;
+/* Image metadata. `kind: 'ai'` images were generated for this site and are disclosed as such. */
+const photos = {
+  'ai-hero-kigali': { kind: 'ai', title: 'Hillside construction, Kigali-style terrain', alt: 'A concrete building under construction on green terraced hills at sunrise, with rebar columns in the foreground' },
+  'ai-gabion-hills': { kind: 'ai', title: 'Gabion retaining wall on a hillside road', alt: 'A long stone-filled gabion retaining wall following a red-earth road across terraced hills' },
+  'ai-steel-yard': { kind: 'ai', title: 'Steel stockyard', alt: 'Bundles of ribbed reinforcement bar, wire coils and steel beams stored in a bright warehouse' },
+  'hero-site': { kind: 'photo', title: 'Construction site', source: 'Pexels', url: 'https://www.pexels.com/photo/workers-at-a-construction-site-11580364/', alt: 'Workers spreading across a reinforcement steel mesh laid over a foundation slab' },
+  gabion: { kind: 'photo', title: 'Gabion mesh close-up', source: 'Unsplash', url: 'https://unsplash.com/photos/gabion-wall-filled-with-light-colored-rocks-Cmkb8xnGmlE', alt: 'Close-up of light-coloured stones held inside a welded gabion mesh' },
+  wire: { kind: 'photo', title: 'Steel wire', source: 'Unsplash', url: 'https://unsplash.com/photos/a-close-up-of-a-coil-of-wire-9y6hRUIpifY', alt: 'Close-up of a coil of steel wire' },
+  rebar: { kind: 'photo', title: 'Reinforcement steel', source: 'Pexels', url: 'https://www.pexels.com/photo/gray-metal-bars-in-close-up-shot-5623179/', alt: 'Tightly stacked ribbed reinforcement bars' },
+  beam: { kind: 'photo', title: 'Structural steel', source: 'Pexels', url: 'https://www.pexels.com/photo/metal-beams-in-a-construction-site-3818947/', alt: 'A structural steel frame with bolted beam connections under construction' },
+  pipe: { kind: 'photo', title: 'Plumbing', source: 'Pexels', url: 'https://www.pexels.com/photo/pipes-instalation-on-building-wall-12778827/', alt: 'Plumbing pipework installed along a building wall' },
+  electric: { kind: 'photo', title: 'Electrical work', source: 'Pexels', url: 'https://www.pexels.com/photo/construction-workers-installing-cables-at-train-station-36289775/', alt: 'Workers installing bundles of electrical cable from an elevated platform' },
+  blocks: { kind: 'photo', title: 'General construction materials', source: 'Pexels', url: 'https://www.pexels.com/photo/concrete-construction-site-with-building-materials-36162732/', alt: 'Formwork boards and props stacked beside fresh concrete walls on a building site' },
+  feature: { kind: 'photo', title: 'Reinforcement work', source: 'Pexels', url: 'https://www.pexels.com/photo/builder-standing-on-rebar-at-construction-site-19407552/', alt: 'A builder tying reinforcement steel on a concrete slab' },
+};
+
+/* =========================================================================
+   Helpers
+   ========================================================================= */
+const manifest = JSON.parse(fs.readFileSync(path.join(src, 'img', 'manifest.json'), 'utf8'));
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const attrs = (o) => Object.entries(o).filter(([, v]) => v !== undefined && v !== false && v !== '').map(([k, v]) => (v === true ? ` ${k}` : ` ${k}="${esc(v)}"`)).join('');
+
+/** Responsive <img> from the prepared WebP renditions. */
+function img(name, { sizes = '100vw', cls, eager = false, alt } = {}) {
+  const m = manifest[name];
+  if (!m || !photos[name]) throw new Error(`Unknown image: ${name}`);
+  const srcset = m.widths.map((w) => `/img/${name}-${w}.webp ${w}w`).join(', ');
+  const fallback = `/img/${name}-${m.widths.find((w) => w >= 1000) ?? m.widths.at(-1)}.webp`;
+  return `<img${attrs({
+    class: cls, src: fallback, srcset, sizes, width: m.width, height: m.height,
+    alt: alt ?? photos[name].alt, loading: eager ? undefined : 'lazy', fetchpriority: eager ? 'high' : undefined, decoding: 'async',
+  })}>`;
 }
-function write(route,html){const dir=path.join(dist,route);fs.mkdirSync(dir,{recursive:true});fs.writeFileSync(path.join(dir,'index.html'),html);}
-fs.rmSync(dist,{recursive:true,force:true});fs.mkdirSync(dist,{recursive:true});
-write('',page('Steel, gabion & construction materials in Rwanda','Fortimesh supplies steel, gabion solutions and construction materials for projects across Rwanda.',home,'home','/'));
-write('products',page('Products','Explore Fortimesh product families: gabion mesh, steel wire, reinforcement, structural steel, plumbing, electrical and construction materials.',catalog,'products','/products/'));
-for(const p of products) write(`products/${p.slug}`,page(p.name,`${p.summary} Request specifications and availability from Fortimesh in Rwanda.`,productPage(p),'products',`/products/${p.slug}/`));
-write('about',page('About Fortimesh','Learn about Fortimesh and Steels Rwanda Ltd, a supplier of steel, gabion solutions and construction materials.',about,'about','/about/'));
-write('applications',page('Applications','Explore common applications for Fortimesh gabion, steel, plumbing and electrical material families.',applications,'applications','/applications/'));
-write('contact',page('Contact','Find Fortimesh in Kigali and prepare a clear materials request.',contact,'contact','/contact/'));
-write('image-credits',page('Image credits','Sources for representative construction photography used on the Fortimesh preview.',credits,'','/image-credits/'));
-write('quote',page('Request a quote','Prepare a detailed material request for Fortimesh and Steels Rwanda Ltd.',quote,'quote','/quote/'));
-for(const file of ['styles.css','photo.css','app.js','favicon.svg','robots.txt']) fs.copyFileSync(path.join(root,'src',file),path.join(dist,file));
-fs.copyFileSync(path.join(root,'src','logo.png'),path.join(dist,'logo.png'));
-fs.cpSync(path.join(root,'src','photos'),path.join(dist,'photos'),{recursive:true});
-fs.writeFileSync(path.join(dist,'sitemap.xml'),`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${['/','/products/',...products.map(p=>`/products/${p.slug}/`),'/about/','/applications/','/contact/','/quote/','/image-credits/'].map(x=>`<url><loc>${origin}${x}</loc></url>`).join('')}</urlset>`);
-console.log(`Built ${products.length+7} pages to ${dist}`);
+
+const paths = {
+  arrow: '<path d="M4 12h15m-6-6 6 6-6 6"/>',
+  up: '<path d="M7 17 17 7M8 7h9v9"/>',
+  left: '<path d="M20 12H5m6-6-6 6 6 6"/>',
+  check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  pin: '<path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2.4"/>',
+  phone: '<path d="M5 4h3l2 5-2.5 1.5a11 11 0 0 0 6 6L15 14l5 2v3a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z"/>',
+  mail: '<rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="m3.5 6 8.5 7 8.5-7"/>',
+  chat: '<path d="M4 20l1.3-3.9A8 8 0 1 1 8 19.2Z"/>',
+  copy: '<rect x="8" y="8" width="12" height="12" rx="1.5"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/>',
+  share: '<path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>',
+  doc: '<path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8Z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  instagram: '<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>',
+  send: '<path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z"/>',
+};
+const icon = (name, cls) => `<svg${cls ? ` class="${cls}"` : ''} aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${paths[name]}</svg>`;
+
+/** Button with the sliding double-arrow micro-interaction. */
+const btn = (href, label, variant = 'primary', ic = 'up', extra = {}) =>
+  `<a class="btn btn--${variant}${extra.cls ? ` ${extra.cls}` : ''}" href="${href}"${extra.attrs ?? ''}><span>${label}</span><span class="btn__icon">${icon(ic)}${icon(ic)}</span></a>`;
+
+/**
+ * Split a headline into masked words for the reveal animation.
+ * `*text*` marks an accent run; `|` forces a line break.
+ */
+function split(text, delayMs = 0) {
+  let wi = 0;
+  let accent = false;
+  return text.split('|').map((line) => line.trim().split(/\s+/).map((raw) => {
+    let word = raw;
+    const open = word.startsWith('*');
+    if (open) { accent = true; word = word.slice(1); }
+    const close = word.endsWith('*');
+    if (close) word = word.slice(0, -1);
+    const inner = accent ? `<em>${word}</em>` : word;
+    if (close) accent = false;
+    return `<span class="w"><span style="--wi:${wi++}${delayMs ? `;--d:${delayMs}ms` : ''}">${inner}</span></span>`;
+  }).join(' ')).join('<br>');
+}
+
+/** Words for the scroll-linked highlight paragraph. `*word*` is accented. */
+const highlight = (text) => text.split(/\s+/).map((w) => {
+  const accent = w.startsWith('*');
+  const clean = w.replace(/\*/g, '');
+  return `<span class="hw${accent || w.endsWith('*') ? ' is-accent' : ''}">${clean}</span>`;
+}).join(' ');
+
+const mesh = (cls = '') => `<div class="mesh${cls ? ` ${cls}` : ''}" aria-hidden="true"></div>`;
+
+/* =========================================================================
+   Shared layout
+   ========================================================================= */
+const navItems = [
+  { href: '/products/', label: 'Products', key: 'products' },
+  { href: '/applications/', label: 'Applications', key: 'applications' },
+  { href: '/about/', label: 'About', key: 'about' },
+  { href: '/contact/', label: 'Contact', key: 'contact' },
+];
+const current = (active, key) => (active === key ? ' aria-current="page"' : '');
+
+const contactLinks = () => [
+  site.contact.phone && `<a href="tel:${site.contact.phone.replace(/[^+\d]/g, '')}">${esc(site.contact.phone)}</a>`,
+  site.contact.whatsapp && `<a href="https://wa.me/${site.contact.whatsapp}" target="_blank" rel="noopener noreferrer">WhatsApp (${esc(site.contact.phone)})</a>`,
+  site.contact.email && `<a href="mailto:${site.contact.email}">${esc(site.contact.email)}</a>`,
+  site.social?.instagram && `<a href="${site.social.instagram}" target="_blank" rel="noopener noreferrer">Instagram ${esc(site.social.instagramHandle)}</a>`,
+].filter(Boolean).join('');
+
+const header = (active) => `
+<a class="skip" href="#main">Skip to content</a>
+<header class="hdr" data-hdr>
+  <div class="container hdr__bar">
+    <a class="hdr__brand" href="/" aria-label="${site.short} — home">
+      <img class="hdr__logo hdr__logo--light" src="/brand/logo-white.png" alt="" width="480" height="167">
+      <img class="hdr__logo hdr__logo--dark" src="/brand/logo.png" alt="" width="480" height="167">
+    </a>
+    <nav class="hdr__nav" aria-label="Main">
+      ${navItems.map((n) => `<a href="${n.href}"${current(active, n.key)}>${n.label}</a>`).join('')}
+    </nav>
+    <div class="hdr__actions">
+      ${site.contact.phone ? `<a class="hdr__phone" href="tel:${site.contact.phone.replace(/[^+\d]/g, '')}" aria-label="Call ${esc(site.contact.phone)}">${icon('phone')}<span>${esc(site.contact.phone)}</span></a>` : ''}
+      ${btn('/quote/', 'Request a quote', 'primary', 'up', { cls: 'btn--sm hdr__cta' })}
+      <button class="hdr__toggle" type="button" aria-expanded="false" aria-controls="menu" aria-label="Open menu"><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+<div class="menu" id="menu" aria-hidden="true" inert>
+  ${mesh()}
+  <nav class="menu__nav" aria-label="Mobile">
+    ${[{ href: '/', label: 'Home', key: 'home' }, ...navItems, { href: '/quote/', label: 'Request a quote', key: 'quote' }]
+      .map((n, i) => `<a href="${n.href}" style="--i:${i}"${current(active, n.key)}><small>${String(i + 1).padStart(2, '0')}</small>${n.label}</a>`).join('')}
+  </nav>
+  <div class="menu__foot">
+    <p>${site.name}<br>${site.address}</p>
+    <div class="menu__contact">${contactLinks()}</div>
+  </div>
+</div>`;
+
+const footer = `
+<footer class="ftr">
+  <div class="container">
+    <div class="ftr__cta">
+      <div>
+        <p class="ftr__kicker">Have a bill of quantities or material list?</p>
+        <a class="ftr__big" href="/quote/"><span>Start a quote request</span><i>${icon('up')}</i></a>
+      </div>
+    </div>
+    <div class="ftr__grid">
+      <div class="ftr__brand">
+        <img src="/brand/logo-white.png" alt="${site.name}" width="480" height="167" loading="lazy">
+        <p>Steel, gabion solutions and construction materials supplied from Kimironko, Kigali for the projects moving Rwanda forward.</p>
+      </div>
+      <nav class="ftr__col" aria-label="Company">
+        <h2>Company</h2>
+        <a href="/about/">About Fortimesh</a>
+        <a href="/applications/">Applications</a>
+        <a href="/contact/">Contact &amp; location</a>
+        <a href="/quote/">Request a quote</a>
+        <a href="/image-credits/">Image credits</a>
+      </nav>
+      <nav class="ftr__col" aria-label="Products">
+        <h2>Products</h2>
+        ${products.map((p) => `<a href="/products/${p.slug}/">${p.name}</a>`).join('')}
+      </nav>
+      <div class="ftr__col">
+        <h2>Kigali sales desk</h2>
+        <p>${site.address}<br><small>${site.hours}</small></p>
+        ${contactLinks()}
+      </div>
+    </div>
+    <div class="ftr__bottom">
+      <span>© ${year} ${site.name}. All rights reserved.</span>
+      <span>KG 667 Street, Kimironko, Kigali · <a href="/image-credits/">Image credits</a></span>
+    </div>
+  </div>
+  <div class="ftr__word" aria-hidden="true">FORTIMESH</div>
+</footer>`;
+
+const fonts = 'https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Inter:wght@400..700&display=swap';
+
+function page({ title, description, pathName, body, active = '', image = 'ai-hero-kigali', crumbs, product }) {
+  const url = site.origin + pathName;
+  const fullTitle = pathName === '/' ? `${site.name} | ${title}` : `${title} | ${site.short} Rwanda`;
+  const imgMeta = manifest[image];
+  const ogWidth = imgMeta.widths.at(-1);
+  const ogHeight = Math.round((imgMeta.height * ogWidth) / imgMeta.width);
+  const ogImage = `${site.origin}/img/${image}-${ogWidth}.webp`;
+  const ogAlt = photos[image]?.alt || site.name;
+
+  const orgNode = {
+    '@type': ['Organization', 'HardwareStore'],
+    '@id': `${site.origin}/#organization`,
+    name: site.name,
+    alternateName: `${site.short} Rwanda`,
+    url: site.origin,
+    logo: `${site.origin}/brand/logo.png`,
+    image: ogImage,
+    telephone: site.contact.phone.replace(/\s+/g, ''),
+    email: site.contact.email,
+    priceRange: '$$',
+    areaServed: { '@type': 'Country', name: 'Rwanda' },
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: 'KG 667 Street, Kimironko',
+      addressLocality: 'Kigali',
+      addressCountry: 'RW',
+    },
+    openingHoursSpecification: [
+      {
+        '@type': 'OpeningHoursSpecification',
+        dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+        opens: '08:00',
+        closes: '18:00',
+      },
+    ],
+    sameAs: [site.social?.instagram, site.directory].filter(Boolean),
+  };
+
+  const graph = [orgNode];
+  if (crumbs) {
+    graph.push({
+      '@type': 'BreadcrumbList',
+      itemListElement: crumbs.map(([name, href], i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        name,
+        item: site.origin + href,
+      })),
+    });
+  }
+  if (product) {
+    graph.push({
+      '@type': 'Product',
+      name: product.name,
+      description: product.description,
+      image: ogImage,
+      category: catName(product.cat),
+      brand: { '@type': 'Brand', name: site.short },
+      manufacturer: { '@id': `${site.origin}/#organization` },
+      offers: {
+        '@type': 'Offer',
+        url,
+        availability: 'https://schema.org/InStock',
+        areaServed: { '@type': 'Country', name: 'Rwanda' },
+        seller: { '@id': `${site.origin}/#organization` },
+      },
+    });
+  }
+  const schema = { '@context': 'https://schema.org', '@graph': graph };
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(fullTitle)}</title>
+<meta name="description" content="${esc(description)}">
+<link rel="canonical" href="${url}">
+<meta name="theme-color" content="#0a1416">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/brand/favicon-32.png">
+<link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">
+<meta property="og:type" content="${product ? 'product' : 'website'}">
+<meta property="og:site_name" content="${site.name}">
+<meta property="og:locale" content="en_RW">
+<meta property="og:title" content="${esc(fullTitle)}">
+<meta property="og:description" content="${esc(description)}">
+<meta property="og:url" content="${url}">
+<meta property="og:image" content="${ogImage}">
+<meta property="og:image:width" content="${ogWidth}">
+<meta property="og:image:height" content="${ogHeight}">
+<meta property="og:image:alt" content="${esc(ogAlt)}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${esc(fullTitle)}">
+<meta name="twitter:description" content="${esc(description)}">
+<meta name="twitter:image" content="${ogImage}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="${fonts}">
+<link rel="stylesheet" href="/styles.css">
+<script>document.documentElement.classList.add('js')</script>
+<script src="/app.js" defer></script>
+<script type="application/ld+json">${JSON.stringify(schema)}</script>
+</head>
+<body>
+${header(active)}
+<main id="main">
+${body}
+</main>
+${footer}
+</body>
+</html>`;
+}
+
+/* =========================================================================
+   Reusable sections
+   ========================================================================= */
+const crumbsNav = (items) => `<nav class="crumbs" aria-label="Breadcrumb" data-reveal="fade">${items.map(([name, href], i) => (i === items.length - 1 ? `<span aria-current="page">${name}</span>` : `<a href="${href}">${name}</a><span aria-hidden="true">/</span>`)).join('')}</nav>`;
+
+const pageHero = ({ label, title, lead, image, crumbs, short = false, position }) => `
+<section class="phero${short ? ' phero--short' : ''}">
+  <div class="phero__media px" data-parallax="0.18">${img(image, { eager: true, sizes: '100vw' }).replace('<img', `<img${position ? ` style="object-position:${position}"` : ''}`)}</div>
+  ${mesh()}
+  <div class="container phero__inner">
+    ${crumbs ? crumbsNav(crumbs) : ''}
+    <p class="eyebrow eyebrow--light" data-reveal="fade">${label}</p>
+    <h1 class="display phero__title" data-reveal="words">${split(title, 150)}</h1>
+    ${lead ? `<p class="phero__lead" data-reveal style="--i:4">${lead}</p>` : ''}
+  </div>
+</section>`;
+
+const cta = `
+<section class="cta">
+  <div class="cta__media px" data-parallax="0.2">${img('rebar', { alt: '', sizes: '100vw' })}</div>
+  ${mesh()}
+  <div class="container cta__inner">
+    <p class="label label--light" data-reveal="fade">Ready to price your material schedule?</p>
+    <h2 class="display-2" data-reveal="words">${split('Let’s get your project *moving.*')}</h2>
+    <p data-reveal style="--i:2">Send your quantities, dimensions and delivery site to our Kimironko, Kigali sales desk—online, on WhatsApp or by phone.</p>
+    <div class="cta__actions" data-reveal style="--i:3">
+      ${btn('/quote/', 'Request a quote', 'light')}
+      ${btn(`https://wa.me/${site.contact.whatsapp}`, 'Chat on WhatsApp', 'ghost', 'chat', { attrs: ' target="_blank" rel="noopener noreferrer"' })}
+      ${btn('/products/', 'Browse products', 'ghost', 'arrow')}
+    </div>
+  </div>
+</section>`;
+
+const card = (p, i) => `
+<a class="card" href="/products/${p.slug}/" data-cat="${p.cat}" data-reveal style="--i:${i % 3};view-transition-name:card-${p.slug}">
+  <div class="card__media">${img(p.image, { sizes: '(max-width: 640px) 100vw, (max-width: 960px) 50vw, 420px' })}<span class="card__tag">${esc(catName(p.cat))}</span></div>
+  <div class="card__body">
+    <span class="card__n">${p.n} / ${String(products.length).padStart(2, '0')}</span>
+    <h3>${p.name}</h3>
+    <p>${p.summary}</p>
+    <span class="link">Specifications &amp; quote ${icon('arrow')}</span>
+  </div>
+</a>`;
+
+const stepsList = (dark = false) => `
+<ol class="steps" data-reveal="steps">
+  ${steps.map((s, i) => `<li class="step" style="--i:${i}"><span class="step__n">Step ${String(i + 1).padStart(2, '0')}</span><h3>${s.title}</h3><p>${s.text}</p></li>`).join('')}
+</ol>`;
+
+const productChips = (slugs) => `<div class="chips">${slugs.map((s) => `<a class="chip-link" href="/products/${s}/">${bySlug(s).name} ${icon('up')}</a>`).join('')}</div>`;
+
+/* =========================================================================
+   Pages
+   ========================================================================= */
+const home = `
+<section class="hero">
+  <div class="hero__media px" data-parallax="0.22">${img('ai-hero-kigali', { eager: true, sizes: '100vw' })}</div>
+  ${mesh()}
+  <div class="container hero__content">
+    <p class="eyebrow eyebrow--light" data-reveal="fade">Steel · Gabions · Construction Materials — Kigali, Rwanda</p>
+    <h1 class="display hero__title" data-reveal="words">${split('Strength for | *what’s next.*', 250)}</h1>
+    <div class="hero__row">
+      <p class="hero__lead" data-reveal style="--i:6">We supply structural and reinforcement steel, heavy-duty gabion mesh, fencing wire, plumbing, electrical and essential building materials to contractors, engineers and developers across Rwanda.</p>
+      <div class="hero__ctas" data-reveal style="--i:7">
+        ${btn('/products/', 'Explore our products', 'primary')}
+        ${btn('/quote/', 'Request a quote', 'ghost', 'arrow')}
+      </div>
+    </div>
+  </div>
+  <nav class="container hero__rail" aria-label="Product categories" data-reveal style="--i:8">
+    ${categories.map((c, i) => `<a class="hero__cat" href="/products/?category=${c.id}"><span class="hero__cat-n">0${i + 1}</span><span>${esc(c.name)}</span>${icon('up')}</a>`).join('')}
+  </nav>
+</section>
+
+<section class="ticker" aria-label="Product families">
+  <div class="ticker__track">
+    ${[0, 1].map((k) => `<div class="ticker__group"${k ? ' aria-hidden="true"' : ''}>${products.map((p) => `<span class="ticker__item">${p.name}<img src="/brand/mark.png" alt="" width="105" height="128" loading="lazy"></span>`).join('')}</div>`).join('')}
+  </div>
+</section>
+
+<section class="section intro">
+  <div class="container intro__grid">
+    <p class="label" data-reveal="fade"><span class="num">(01)</span> Who we are</p>
+    <div>
+      <p class="intro__text" data-highlight>${highlight('From our stockyard in Kimironko, Kigali, Fortimesh and Steels Rwanda supplies *steel *products, *gabion *solutions and construction materials to contractors, engineers, developers, institutions and individual builders across Rwanda.')}</p>
+      <div class="stats">
+        <div class="stat" data-reveal style="--i:0"><span class="stat__n" data-count="${products.length}">0${products.length}</span><span class="stat__l">Core product families stocked &amp; sourced</span></div>
+        <div class="stat" data-reveal style="--i:1"><span class="stat__n" data-count="${categories.length}">0${categories.length}</span><span class="stat__l">Supply divisions, from civil groundworks to MEP services</span></div>
+        <div class="stat" data-reveal style="--i:2"><span class="stat__n">KGL</span><span class="stat__l">KG 667 St, Kimironko — dispatching nationwide across Rwanda</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section--white products">
+  <div class="container">
+    <header class="sec-head">
+      <div>
+        <p class="label" data-reveal="fade"><span class="num">(02)</span> What we supply</p>
+        <h2 class="h2 on-light" data-reveal="words">${split('Materials for every *critical stage.*')}</h2>
+      </div>
+      <div class="sec-head__aside" data-reveal>
+        <p>From hillside gabion retention and concrete reinforcement to roof steelwork and building services, explore our seven core supply families.</p>
+        <a class="link" href="/products/">View full catalogue &amp; specs ${icon('arrow')}</a>
+      </div>
+    </header>
+    <div class="bento">
+      ${products.map((p, i) => `
+      <a class="tile tile--${i}" href="/products/${p.slug}/" data-reveal="up" style="--i:${i % 3}">
+        <div class="tile__media">${img(p.image, { sizes: i === 0 ? '(max-width: 960px) 100vw, 60vw' : i === 6 ? '100vw' : '(max-width: 640px) 100vw, (max-width: 960px) 50vw, 40vw' })}</div>
+        <div class="tile__top"><span>${p.n} / 07</span><span>${esc(catName(p.cat))}</span></div>
+        <div class="tile__body"><h3>${p.name}</h3><p><span>${p.summary}</span></p></div>
+        <span class="tile__go">${icon('up')}</span>
+      </a>`).join('')}
+    </div>
+  </div>
+</section>
+
+<section class="section approach">
+  <div class="container approach__grid">
+    <div class="approach__media">
+      <figure class="approach__fig px" data-reveal="clip" data-parallax="0.1">
+        ${img('feature', { sizes: '(max-width: 960px) 100vw, 50vw' })}
+        <figcaption><strong>Supply<br>with purpose.</strong><small>Kigali · Rwanda</small></figcaption>
+      </figure>
+    </div>
+    <div class="approach__copy">
+      <p class="label" data-reveal="fade"><span class="num">(03)</span> The Fortimesh advantage</p>
+      <h2 class="h2 on-light" data-reveal="words">${split('Focused on the materials behind *lasting work.*')}</h2>
+      <p class="lead" data-reveal>We supply quality steel products, gabion mesh, fencing wire and essential building materials for residential, commercial and civil infrastructure projects across Rwanda—combining responsive pricing with dependable site logistics.</p>
+      <ol class="pillars">
+        <li class="pillar" data-reveal style="--i:0"><span class="pillar__n">01</span><div><h3>Complete project consolidation</h3><p>Source gabions, wire, rebar, structural steel, plumbing, electrical and Sika waterproofing solutions through a single Kigali supplier.</p></div></li>
+        <li class="pillar" data-reveal style="--i:1"><span class="pillar__n">02</span><div><h3>Quotes matched to your specification</h3><p>We verify bar diameters, section wall thicknesses, wire gauges, zinc/PVC coatings and quantities directly against your BoQ or drawings.</p></div></li>
+        <li class="pillar" data-reveal style="--i:2"><span class="pillar__n">03</span><div><h3>Yard collection or nationwide delivery</h3><p>Collect directly from KG 667 Street in Kimironko, Kigali, or coordinate phased truck deliveries to your project site anywhere in Rwanda.</p></div></li>
+      </ol>
+      <div data-reveal>${btn('/about/', 'About our company', 'dark')}</div>
+    </div>
+  </div>
+</section>
+
+<section class="uses" data-uses>
+  ${mesh('mesh--left')}
+  <div class="container uses__grid">
+    <div class="uses__sticky">
+      <p class="label label--light" data-reveal="fade"><span class="num">(04)</span> Where materials work</p>
+      <h2 class="h2" data-reveal="words">${split('Built around *real site* needs.')}</h2>
+      <div class="uses__frames">
+        ${applications.map((a, i) => `<div class="uses__frame${i === 0 ? ' is-active' : ''}" data-frame="${i}">${img(a.image, { sizes: '(max-width: 960px) 100vw, 50vw', alt: '' })}</div>`).join('')}
+        <p class="uses__count"><b data-uses-current>01</b> / 0${applications.length}</p>
+      </div>
+    </div>
+    <div class="uses__list">
+      ${applications.map((a, i) => `
+      <article class="use${i === 0 ? ' is-active' : ''}" data-use="${i}">
+        <div class="use__media">${img(a.image, { sizes: '100vw' })}</div>
+        <p class="use__n">${a.n} — ${a.label}</p>
+        <h3>${a.title}</h3>
+        <p>${a.text}</p>
+        ${productChips(a.products)}
+      </article>`).join('')}
+    </div>
+  </div>
+</section>
+
+<section class="section process">
+  <div class="container">
+    <header class="sec-head">
+      <div>
+        <p class="label" data-reveal="fade"><span class="num">(05)</span> How ordering works</p>
+        <h2 class="h2 on-light" data-reveal="words">${split('From schedule to *site delivery.*')}</h2>
+      </div>
+      <div class="sec-head__aside" data-reveal>
+        <p>A clear specification is the fastest route to an accurate quotation. Three straightforward steps get materials moving to your site.</p>
+        <a class="link" href="/quote/">Start your request ${icon('arrow')}</a>
+      </div>
+    </header>
+    ${stepsList()}
+  </div>
+</section>
+${cta}`;
+
+const catalog = `
+${pageHero({ label: 'Product catalogue', title: 'Materials with a *job to do.*', image: 'ai-steel-yard', crumbs: [['Home', '/'], ['Products', '/products/']], lead: 'Explore our seven core supply families. Select any product family for standard dimensions, grades and a direct quotation.' })}
+<section class="section">
+  <div class="container">
+    <div class="filters__bar">
+      <div class="filters" role="group" aria-label="Filter products by category">
+        <button class="chip is-active" type="button" data-filter="all" aria-pressed="true">All <sup>0${products.length}</sup></button>
+        ${categories.map((c) => `<button class="chip" type="button" data-filter="${c.id}" aria-pressed="false">${esc(c.name)} <sup>0${products.filter((p) => p.cat === c.id).length}</sup></button>`).join('')}
+      </div>
+      <p class="filters__status" aria-live="polite" data-filter-status>Showing ${products.length} product families</p>
+    </div>
+    <div class="cards" data-catalog>${products.map(card).join('')}</div>
+    <p class="note">We supply both standard stocked sizes and project-specific orders across Rwanda. Contact our Kimironko sales desk on <a href="tel:${site.contact.phone.replace(/[^+\d]/g, '')}">${esc(site.contact.phone)}</a> to confirm current batch availability and delivery lead times.</p>
+  </div>
+</section>
+${cta}`;
+
+function productPage(p, i) {
+  const prev = products[(i - 1 + products.length) % products.length];
+  const next = products[(i + 1) % products.length];
+  const related = products.filter((x) => x.slug !== p.slug).sort((a, b) => (b.cat === p.cat) - (a.cat === p.cat)).slice(0, 3);
+  const waHref = `https://wa.me/${site.contact.whatsapp}?text=${encodeURIComponent(`Hello Fortimesh, I would like to request pricing and availability for ${p.name}.`)}`;
+  return `
+<section class="pd-hero">
+  ${mesh('mesh--left')}
+  <div class="container pd-hero__grid">
+    <div class="pd-hero__copy">
+      ${crumbsNav([['Home', '/'], ['Products', '/products/'], [p.name, `/products/${p.slug}/`]])}
+      <p class="eyebrow eyebrow--light" data-reveal="fade">${esc(catName(p.cat))} — ${p.n} / 07</p>
+      <h1 class="display-2" data-reveal="words">${split(p.name, 120)}</h1>
+      <p class="pd-hero__lead" data-reveal style="--i:3">${p.summary}</p>
+      <div class="pd-hero__actions" data-reveal style="--i:4">
+        ${btn(`/quote/?product=${p.slug}`, 'Request a quote', 'primary')}
+        ${btn(waHref, 'WhatsApp inquiry', 'ghost', 'chat', { attrs: ' target="_blank" rel="noopener noreferrer"' })}
+        <a class="link link--light" href="/products/">All products ${icon('arrow')}</a>
+      </div>
+      <ul class="pd-hero__tags" data-reveal style="--i:5" aria-label="Common applications">${p.uses.map((u) => `<li>${u}</li>`).join('')}</ul>
+    </div>
+    <figure class="pd-hero__media" data-reveal="clip">
+      ${img(p.image, { eager: true, sizes: '(max-width: 960px) 100vw, 50vw' })}
+      <figcaption>${esc(catName(p.cat))} · Fortimesh Rwanda</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="section section--white on-light">
+  <div class="container">
+    <div class="pd-body__grid">
+      <div class="pd-overview">
+        <p class="label" data-reveal="fade">Overview</p>
+        <p class="lead-lg" data-reveal>${p.description}</p>
+        <h2 class="h3" data-reveal>Typical specifications &amp; range</h2>
+        <dl class="spec-grid" data-reveal>${p.specs.map(([k, v]) => `<div class="spec-card"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
+        <h2 class="h3" data-reveal>Common applications</h2>
+        <ul class="num-list">${p.uses.map((u, k) => `<li data-reveal style="--i:${k}"><span>0${k + 1}</span><strong>${u}</strong></li>`).join('')}</ul>
+      </div>
+      <aside class="panel" data-reveal>
+        ${mesh()}
+        <p class="label label--light">For an accurate quote</p>
+        <h2 class="h3">What to include</h2>
+        <ul class="checks">${p.request.map((r) => `<li>${icon('check')}<span>${r}</span></li>`).join('')}</ul>
+        ${btn(`/quote/?product=${p.slug}`, `Prepare a quote`, 'primary', 'up', { cls: 'btn--block' })}
+        ${btn(waHref, `Ask on WhatsApp`, 'ghost', 'chat', { cls: 'btn--block', attrs: ' target="_blank" rel="noopener noreferrer"' })}
+        <small>Direct sales desk: ${esc(site.contact.phone)} · ${esc(site.locality)}</small>
+      </aside>
+    </div>
+    ${p.gallery.length ? `<div class="gallery">${p.gallery.map((g, k) => `<figure class="px" data-reveal="clip" data-parallax="0.08" style="--i:${k}">${img(g, { sizes: '(max-width: 640px) 100vw, 50vw' })}</figure>`).join('')}</div>` : ''}
+  </div>
+</section>
+
+<nav class="pd-nav" aria-label="More products">
+  <a href="/products/${prev.slug}/"><small>← Previous</small><strong>${prev.name}</strong></a>
+  <a href="/products/${next.slug}/"><small>Next →</small><strong>${next.name}</strong></a>
+</nav>
+
+<section class="section">
+  <div class="container">
+    <header class="sec-head">
+      <div>
+        <p class="label" data-reveal="fade">Keep exploring</p>
+        <h2 class="h2 on-light" data-reveal="words">${split('Related *materials.*')}</h2>
+      </div>
+      <a class="link" href="/products/" data-reveal>View all products ${icon('arrow')}</a>
+    </header>
+    <div class="cards">${related.map(card).join('')}</div>
+  </div>
+</section>
+${cta}`;
+}
+
+const about = `
+${pageHero({ label: 'About Fortimesh', title: 'Strength that *secures your future.*', image: 'beam', crumbs: [['Home', '/'], ['About', '/about/']], lead: 'Based in Kimironko, Kigali, we supply steel, gabion solutions and essential construction materials for projects shaping communities across Rwanda.' })}
+<section class="section">
+  <div class="container split">
+    <div>
+      <p class="label" data-reveal="fade">Our company</p>
+      <h2 class="h2 on-light" data-reveal="words">${split('Reliable materials. | *Practical service.*')}</h2>
+    </div>
+    <div class="prose" data-reveal>
+      <p><strong>FORTIMESH AND STEELS RWANDA LTD</strong> is a Kigali-based construction materials and steel supplier located at KG 667 Street, Kimironko. We partner with civil and building contractors, structural engineers, real estate developers, public institutions and private homebuilders across Rwanda.</p>
+      <p>Our core strength lies in bridging heavy civil and structural steel requirements—such as double-twisted gabion baskets, chain-link fencing, deformed reinforcement bars and structural hollow/open sections—with everyday building services and waterproofing supplies like Sika Hydrofuge.</p>
+      <p>Whether your procurement starts from an engineer’s bar bending schedule, a tender bill of quantities or an urgent site requisition, our sales team provides clear specifications, competitive unit pricing and dependable delivery coordination.</p>
+      <a class="link" href="/products/">Explore our product range ${icon('arrow')}</a>
+    </div>
+  </div>
+</section>
+<section class="section section--white on-light">
+  <div class="container">
+    <header class="sec-head">
+      <div>
+        <p class="label" data-reveal="fade">What we supply</p>
+        <h2 class="h2" data-reveal="words">${split('Four divisions. | *Seven* product families.')}</h2>
+      </div>
+    </header>
+    <div class="cats">
+      ${categories.map((c, i) => `
+      <article class="cat" data-reveal style="--i:${i}">
+        <span class="cat__n">0${i + 1}</span>
+        <h3>${esc(c.name)}</h3>
+        <p>${c.blurb}</p>
+        <ul>${products.filter((p) => p.cat === c.id).map((p) => `<li><a href="/products/${p.slug}/">${p.name}${icon('up')}</a></li>`).join('')}</ul>
+      </article>`).join('')}
+    </div>
+  </div>
+</section>
+<section class="section section--dark" style="position:relative;overflow:hidden">
+  ${mesh()}
+  <div class="container" style="position:relative;z-index:2">
+    <header class="sec-head">
+      <div>
+        <p class="label label--light" data-reveal="fade">How we work with you</p>
+        <h2 class="h2" data-reveal="words">${split('From schedule to *site delivery.*')}</h2>
+      </div>
+    </header>
+    ${stepsList(true)}
+  </div>
+</section>
+${cta}`;
+
+const applicationsPage = `
+${pageHero({ label: 'Applications', title: 'For the places *taking shape.*', image: 'hero-site', crumbs: [['Home', '/'], ['Applications', '/applications/']], lead: 'From hillside retaining walls and road embankments to multi-storey concrete frames and MEP installations, see how our product families work together on site.' })}
+<section class="section on-light">
+  <div class="container">
+    ${applications.map((a, i) => `
+    <article class="app-row">
+      <figure class="app-row__media px" data-reveal="clip" data-parallax="0.1">${img(a.image, { sizes: '(max-width: 960px) 100vw, 50vw' })}</figure>
+      <div class="app-row__copy">
+        <p class="label" data-reveal="fade">${a.n} — ${a.label}</p>
+        <h2 class="h2" data-reveal="words">${split(a.title)}</h2>
+        <p data-reveal>${a.text}</p>
+        <div data-reveal style="--i:1">${productChips(a.products)}</div>
+      </div>
+    </article>`).join('')}
+  </div>
+</section>
+${cta}`;
+
+const infoRow = (ic, label, value, note, href) => {
+  const inner = `<span class="info__icon">${icon(ic)}</span><div><small>${label}</small><strong>${value}</strong>${note ? `<p>${note}</p>` : ''}</div>${href ? icon('up') : ''}`;
+  return href ? `<a class="info__row" href="${href}"${href.startsWith('http') ? ' target="_blank" rel="noopener noreferrer"' : ''}>${inner}</a>` : `<div class="info__row">${inner}</div>`;
+};
+
+const contact = `
+${pageHero({ label: 'Contact', title: 'Start the *conversation.*', image: 'ai-hero-kigali', position: '20% 50%', short: true, crumbs: [['Home', '/'], ['Contact', '/contact/']], lead: 'Reach our Kimironko, Kigali sales desk directly by phone, WhatsApp or email—or prepare a structured material request online.' })}
+<section class="section on-light">
+  <div class="container contact-grid">
+    <div>
+      <p class="label" data-reveal="fade">Kigali office &amp; yard</p>
+      <h2 class="h2" data-reveal="words">${split('Based in Kimironko. | *Serving Rwanda.*')}</h2>
+      <p class="lead" data-reveal>Call, message us on WhatsApp or visit our office on KG 667 Street in Kimironko, Kigali to discuss stock availability, technical specifications and site delivery across Rwanda.</p>
+      <div class="info" data-reveal style="--i:1">
+        ${infoRow('pin', 'Address', site.address, 'Kimironko sector, Gasabo District, Kigali', 'https://www.google.com/maps/search/?api=1&query=KG+667+St+Kimironko+Kigali+Rwanda')}
+        ${infoRow('phone', 'Phone', esc(site.contact.phone), 'Direct sales & stock inquiries', `tel:${site.contact.phone.replace(/[^+\d]/g, '')}`)}
+        ${infoRow('chat', 'WhatsApp', esc(site.contact.phone), 'Fastest for sharing BoQs, photos & bar schedules', `https://wa.me/${site.contact.whatsapp}`)}
+        ${infoRow('mail', 'Email', esc(site.contact.email), 'Official quotations & tender documentation', `mailto:${site.contact.email}`)}
+        ${infoRow('clock', 'Business hours', site.hours, 'Yard collections & dispatches by arrangement')}
+        ${site.social?.instagram ? infoRow('instagram', 'Instagram', esc(site.social.instagramHandle), 'Product updates & stock arrivals', site.social.instagram) : ''}
+      </div>
+    </div>
+    <aside class="panel" data-reveal style="--i:1">
+      ${mesh()}
+      <p class="label label--light">Have a material list?</p>
+      <h2 class="h3">Get a fast, itemised quote.</h2>
+      <ul class="checks">
+        <li>${icon('check')}<span>Required products, sizes, gauges or steel grades</span></li>
+        <li>${icon('check')}<span>Quantities in tonnes, bars, rolls, coils or units</span></li>
+        <li>${icon('check')}<span>Site delivery location and target schedule</span></li>
+      </ul>
+      ${btn('/quote/', 'Open quote composer', 'primary', 'up', { cls: 'btn--block' })}
+      ${btn(`https://wa.me/${site.contact.whatsapp}`, 'Message on WhatsApp', 'ghost', 'chat', { cls: 'btn--block', attrs: ' target="_blank" rel="noopener noreferrer"' })}
+      <small>We respond promptly to contractor and project inquiries across Rwanda.</small>
+    </aside>
+  </div>
+</section>
+${cta}`;
+
+const quote = `
+${pageHero({ label: 'Request a quote', title: 'Tell us what the *job needs.*', image: 'wire', short: true, crumbs: [['Home', '/'], ['Request a quote', '/quote/']], lead: 'Build a structured material request and send it straight to our Kigali sales team via online dispatch, WhatsApp or email.' })}
+<section class="section on-light">
+  <div class="container quote-grid">
+    <div>
+      <form id="quote-form" class="qform" action="https://formsubmit.co/${esc(site.contact.email)}" method="POST" novalidate data-reveal>
+        <input type="hidden" name="_subject" value="New Fortimesh Material Quote Request">
+        <input type="hidden" name="_template" value="table">
+        <input type="hidden" name="_captcha" value="false">
+        <noscript><p class="note">JavaScript is disabled—submitting this form will send your request directly to ${esc(site.contact.email)}, or you can call/WhatsApp us on ${esc(site.contact.phone)}.</p></noscript>
+        <div class="qform__sec">
+          <div class="qform__head"><span>01</span><h2>Material</h2></div>
+          <fieldset class="pick">
+            <legend>Primary product family <span class="req">*</span></legend>
+            <div class="pick__grid">
+              ${products.map((p, i) => `<label class="pick__item"><input type="radio" name="product" value="${p.slug}"${i === 0 ? ' required' : ''}><span class="pick__img">${img(p.image, { sizes: '180px', alt: '' })}</span><span class="pick__name">${p.name}</span><span class="pick__check">${icon('check')}</span></label>`).join('')}
+            </div>
+          </fieldset>
+          <div class="fields">
+            <label class="field"><span class="field__label">Quantity / units <span class="req">*</span></span><input name="quantity" placeholder="e.g. 50 gabion boxes, 4 tonnes D12" required maxlength="100"></label>
+            <label class="field"><span class="field__label">When do you need it?</span><input name="timeline" placeholder="e.g. Immediate / Next week / May 2026" maxlength="100"></label>
+            <label class="field field--full"><span class="field__label">Sizes, grade or specification <span class="req">*</span></span><textarea name="specification" rows="5" placeholder="Include dimensions (e.g. 2m×1m×1m gabions, D12/D16 rebar, SHS 50×50×3mm), coatings, standards or additional items from your BoQ" required maxlength="1200"></textarea></label>
+          </div>
+        </div>
+        <div class="qform__sec">
+          <div class="qform__head"><span>02</span><h2>Project &amp; delivery</h2></div>
+          <div class="fields">
+            <label class="field field--full"><span class="field__label">Site location or collection preference <span class="req">*</span></span><input name="location" placeholder="e.g. Nyarutarama site delivery, Bugesera, or Yard collection in Kimironko" required maxlength="150"></label>
+          </div>
+        </div>
+        <div class="qform__sec">
+          <div class="qform__head"><span>03</span><h2>Your details</h2></div>
+          <div class="fields">
+            <label class="field"><span class="field__label">Your name &amp; company <span class="req">*</span></span><input name="name" autocomplete="name" placeholder="Name / Contractor or company" required maxlength="100"></label>
+            <label class="field"><span class="field__label">Phone / WhatsApp or email <span class="req">*</span></span><input name="contact" autocomplete="email" placeholder="+250 7XX XXX XXX or email" required maxlength="150"></label>
+          </div>
+        </div>
+        <div class="qform__submit">
+          <button class="btn btn--primary" type="submit"><span>Prepare &amp; send request</span><span class="btn__icon">${icon('arrow')}${icon('arrow')}</span></button>
+          <p>Generates your formatted quote reference so you can submit online or send directly via WhatsApp (${esc(site.contact.phone)}) or email.</p>
+        </div>
+      </form>
+      <section id="quote-result" class="result" hidden tabindex="-1" aria-live="polite" aria-labelledby="result-title">
+        ${mesh()}
+        <p class="label label--light">Quote reference ready</p>
+        <h2 class="h3" id="result-title">Send to Fortimesh sales desk.</h2>
+        <p>Choose your preferred channel below—WhatsApp is fastest for immediate stock and pricing confirmation, or click <strong>Submit online</strong> to deliver directly to our sales inbox.</p>
+        <pre id="quote-message"></pre>
+        <div class="result__actions">
+          <a id="whatsapp-request" class="btn btn--primary" data-number="${site.contact.whatsapp}" href="https://wa.me/${site.contact.whatsapp}" target="_blank" rel="noopener noreferrer"><span>Send on WhatsApp</span><span class="btn__icon">${icon('chat')}${icon('chat')}</span></a>
+          <button id="online-request" class="btn btn--light" type="button" data-endpoint="https://formsubmit.co/ajax/${esc(site.contact.email)}"><span>Submit online</span><span class="btn__icon">${icon('send')}${icon('send')}</span></button>
+          <a id="email-request" class="btn btn--ghost" data-email="${site.contact.email}" href="mailto:${site.contact.email}"><span>Open in email app</span><span class="btn__icon">${icon('mail')}${icon('mail')}</span></a>
+          <button id="copy-request" class="btn btn--ghost" type="button"><span>Copy text</span><span class="btn__icon">${icon('copy')}${icon('copy')}</span></button>
+          <button id="share-request" class="btn btn--ghost" type="button"><span>Share</span><span class="btn__icon">${icon('share')}${icon('share')}</span></button>
+        </div>
+        <p id="copy-status" class="result__status" role="status"></p>
+      </section>
+    </div>
+    <aside class="qaside">
+      <div class="panel" data-reveal style="--i:1">
+        ${mesh()}
+        <p class="label label--light">Your progress</p>
+        <ol class="progress">
+          <li data-progress="material"><i><b>1</b>${icon('check')}</i>Material details</li>
+          <li data-progress="project"><i><b>2</b>${icon('check')}</i>Project location</li>
+          <li data-progress="contact"><i><b>3</b>${icon('check')}</i>Your details</li>
+        </ol>
+        <div class="panel__direct">
+          <small>Prefer to talk right now?</small>
+          <a href="tel:${site.contact.phone.replace(/[^+\d]/g, '')}">${icon('phone')}<span>${esc(site.contact.phone)}</span></a>
+          <a href="https://wa.me/${site.contact.whatsapp}" target="_blank" rel="noopener noreferrer">${icon('chat')}<span>WhatsApp sales desk</span></a>
+        </div>
+      </div>
+      <div class="tip" data-reveal style="--i:2">
+        <h3>Useful details to include</h3>
+        <ul class="checks">
+          <li>${icon('check')}<span>Product name and intended application</span></li>
+          <li>${icon('check')}<span>Dimensions, bar diameter, wall thickness or coating</span></li>
+          <li>${icon('check')}<span>Quantity in tonnes, bars, rolls, boxes or units</span></li>
+          <li>${icon('check')}<span>Site delivery district or Kimironko yard pickup</span></li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</section>`;
+
+const credits = `
+${pageHero({ label: 'Image credits', title: 'Imagery with *context.*', image: 'gabion', short: true, crumbs: [['Home', '/'], ['Image credits', '/image-credits/']], lead: 'Images on this site show representative construction materials and applications across civil, structural and building works.' })}
+<section class="section on-light">
+  <div class="container">
+    <div class="credits">
+      ${Object.entries(photos).map(([name, ph], i) => `
+      <article class="credit" data-reveal style="--i:${i % 3}">
+        <figure>${img(name, { sizes: '(max-width: 640px) 100vw, 400px', alt: '' })}</figure>
+        <div class="credit__body">
+          <span class="credit__kind">${ph.kind === 'ai' ? 'Custom architectural illustration' : 'Representative photograph'}</span>
+          <h3>${ph.title}</h3>
+          <p>${ph.kind === 'ai' ? 'Created for Fortimesh Rwanda to illustrate typical regional terrain and material applications.' : `Source: <a href="${ph.url}" target="_blank" rel="noopener noreferrer">${ph.source}</a>`}</p>
+        </div>
+      </article>`).join('')}
+    </div>
+  </div>
+</section>`;
+
+const notFound = `
+<section class="phero nf">
+  <div class="phero__media px" data-parallax="0.18">${img('beam', { eager: true, alt: '' })}</div>
+  ${mesh()}
+  <div class="container phero__inner">
+    <p class="eyebrow eyebrow--light" data-reveal="fade">Page not found</p>
+    <h1 class="display phero__title" data-reveal="words">${split('4*0*4')}</h1>
+    <p class="phero__lead" data-reveal style="--i:3">This page isn’t part of the structure. Explore our product range or reach our Kigali team directly.</p>
+    <div class="hero__ctas" data-reveal style="--i:4" style="margin-top:36px">
+      ${btn('/', 'Back to home', 'primary', 'arrow')}
+      ${btn('/products/', 'Browse products', 'ghost', 'arrow')}
+    </div>
+  </div>
+</section>`;
+
+/* =========================================================================
+   Write output
+   ========================================================================= */
+function write(route, html) {
+  const dir = path.join(dist, route);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'index.html'), html);
+}
+
+fs.rmSync(dist, { recursive: true, force: true });
+fs.mkdirSync(dist, { recursive: true });
+
+const routes = [];
+const add = (route, opts) => { routes.push(opts.pathName); write(route, page(opts)); };
+
+add('', { title: 'Steel, Gabion Mesh & Construction Materials in Kigali, Rwanda', description: 'Fortimesh and Steels Rwanda Ltd supplies gabion baskets, chain-link fencing, deformed rebar, structural steel, plumbing, electrical and Sika construction materials from Kimironko, Kigali.', pathName: '/', body: home, active: 'home' });
+add('products', { title: 'Products & Specifications', description: 'Explore Fortimesh product families and specifications: gabion mesh, steel wire, reinforcement rebar, structural steel, plumbing, electrical and construction materials in Rwanda.', pathName: '/products/', body: catalog, active: 'products', image: 'ai-steel-yard', crumbs: [['Home', '/'], ['Products', '/products/']] });
+products.forEach((p, i) => add(`products/${p.slug}`, { title: p.name, description: `${p.summary} Call or WhatsApp ${site.contact.phone} for stock and delivery from Fortimesh in Kigali, Rwanda.`, pathName: `/products/${p.slug}/`, body: productPage(p, i), active: 'products', image: p.image, crumbs: [['Home', '/'], ['Products', '/products/'], [p.name, `/products/${p.slug}/`]], product: p }));
+add('about', { title: 'About Fortimesh', description: 'Learn about Fortimesh and Steels Rwanda Ltd, located at KG 667 Street, Kimironko, Kigali—supplying steel, gabion solutions and construction materials nationwide.', pathName: '/about/', body: about, active: 'about', image: 'beam', crumbs: [['Home', '/'], ['About', '/about/']] });
+add('applications', { title: 'Applications', description: 'Explore civil, structural and MEP applications for Fortimesh gabion baskets, rebar, hollow sections, plumbing and electrical supplies across Rwanda.', pathName: '/applications/', body: applicationsPage, active: 'applications', image: 'hero-site', crumbs: [['Home', '/'], ['Applications', '/applications/']] });
+add('contact', { title: 'Contact & Kigali Location', description: `Contact Fortimesh and Steels Rwanda Ltd at KG 667 Street, Kimironko, Kigali. Call or WhatsApp ${site.contact.phone} or email ${site.contact.email}.`, pathName: '/contact/', body: contact, active: 'contact', crumbs: [['Home', '/'], ['Contact', '/contact/']] });
+add('quote', { title: 'Request a Quote', description: `Request an itemised quotation for gabion mesh, rebar, structural steel and building materials from Fortimesh in Kigali (${site.contact.phone}).`, pathName: '/quote/', body: quote, active: 'quote', image: 'wire', crumbs: [['Home', '/'], ['Request a quote', '/quote/']] });
+add('image-credits', { title: 'Image Credits', description: 'Sources and disclosures for the imagery used on the Fortimesh website.', pathName: '/image-credits/', body: credits, image: 'gabion', crumbs: [['Home', '/'], ['Image credits', '/image-credits/']] });
+fs.writeFileSync(path.join(dist, '404.html'), page({ title: 'Page not found', description: 'The page you were looking for could not be found.', pathName: '/404.html', body: notFound, image: 'beam' }).replace('<link rel="canonical" href="' + site.origin + '/404.html">', '<meta name="robots" content="noindex">'));
+
+const robotsTxt = `User-agent: *\nAllow: /\nSitemap: ${site.origin}/sitemap.xml\n`;
+fs.writeFileSync(path.join(src, 'robots.txt'), robotsTxt);
+for (const file of ['styles.css', 'app.js', 'robots.txt', 'favicon.ico']) fs.copyFileSync(path.join(src, file), path.join(dist, file));
+for (const dir of ['brand', 'img']) fs.cpSync(path.join(src, dir), path.join(dist, dir), { recursive: true });
+fs.rmSync(path.join(dist, 'img', 'manifest.json'));
+
+fs.writeFileSync(path.join(dist, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${routes.map((r) => `  <url><loc>${site.origin}${r}</loc><lastmod>${buildDate}</lastmod></url>`).join('\n')}\n</urlset>\n`);
+console.log(`Built ${routes.length} pages (+404) to ${dist}`);

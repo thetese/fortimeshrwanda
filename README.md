@@ -1,14 +1,40 @@
-# FORTIMESH AND STEELS RWANDA LTD website
+# FORTIMESH AND STEELS RWANDA LTD — Official Website
 
-Static, responsive site built from the company's publicly listed product categories. Run `npm run build` to regenerate `dist/`; serve that directory with any static host.
+Static, responsive B2B catalogue and quote-request platform for **FORTIMESH AND STEELS RWANDA LTD**, located in Kimironko, Kigali, Rwanda.
 
-## Source notes
+## Quick start
 
-- The company description and product families came from the [Consnect company listing](https://www.consnect.rw/) as indexed in October 2026. Its live site was suspended when checked.
-- A [PinkBazaar listing](https://pinkbazaar.in/service/fortimesh-and-steels-rwanda-ltd-113232/) lists KG 667 Street, Kigali, but it does not provide a direct business phone or email. The site therefore shows Kigali only until the address is confirmed by the company.
-- No official SKU data, prices, product photographs, project gallery, phone number, email address, or WhatsApp number were available. The site uses representative construction photography from Pexels and Unsplash, with individual links at `/image-credits/`. These images do not imply that the depicted materials, people, sites, or projects belong to Fortimesh. The supplied Fortimesh logo is in `src/logo.png`. Copy describes product families, not current inventory or technical specifications.
-- The quote composer copies a structured request and uses Web Share where supported. Direct business submission and a numbered WhatsApp link require a confirmed destination.
+```bash
+npm run build   # Regenerate dist/ (14 pages + 404.html + sitemap.xml + robots.txt)
+npm run check   # Validate HTML count, SEO/JSON-LD, contact channels, links & image assets
+```
 
-## Launch checklist
+To build for a custom production domain, set `SITE_ORIGIN`:
 
-Confirm phone/WhatsApp, email, location, opening hours, stock and specifications, and authentic company product/project photography. Then update the content in `src/build.mjs` and rebuild. Add an actual form delivery endpoint before claiming online submissions.
+```bash
+SITE_ORIGIN=https://fortimesh.rw npm run build
+```
+
+## Company & contact details configured (`src/build.mjs`)
+
+- **Company:** FORTIMESH AND STEELS RWANDA LTD
+- **Address:** KG 667 Street, Kimironko, Kigali, Rwanda
+- **Phone / WhatsApp:** `+250 793 086 644` (`https://wa.me/250793086644`)
+- **Email:** `fortimeshrwanda@gmail.com`
+- **Instagram:** [`@fortimesh_rwanda`](https://www.instagram.com/fortimesh_rwanda/)
+- **Hours:** Mon – Sat: 8:00 AM – 6:00 PM CAT
+
+## Lead & quote delivery (`/quote/`)
+
+- Generates a timestamped quote reference (`FM-YYYYMMDD-XXXX`) with local draft autosave.
+- **Send on WhatsApp:** Opens a pre-filled WhatsApp chat to `+250 793 086 644`.
+- **Submit online:** Sends the structured quote table directly to `fortimeshrwanda@gmail.com` via FormSubmit AJAX (`https://formsubmit.co/ajax/fortimeshrwanda@gmail.com`), with progressive HTML form fallback when JavaScript is disabled.
+- **Open in email app / Copy / Share:** Direct `mailto:`, clipboard copy, and Web Share API support.
+
+## Asset pipeline
+
+Source photography and the official logo reside in `src/photos/` and `src/logo.png`. If brand or photo assets change, regenerate responsive WebP renditions and `src/img/manifest.json` with:
+
+```bash
+python tools/prepare_assets.py
+```
