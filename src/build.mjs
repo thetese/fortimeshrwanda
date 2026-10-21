@@ -13,7 +13,11 @@ const dist = path.join(root, 'dist');
 const site = {
   name: 'FORTIMESH AND STEELS RWANDA LTD',
   short: 'Fortimesh',
-  origin: (process.env.SITE_ORIGIN || 'https://fortimesh-rwanda.tangydaisy16.chatgpt.site').replace(/\/+$/, ''),
+  origin: (
+    process.env.SITE_ORIGIN ||
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL && `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`) ||
+    'https://fortimeshrwanda.vercel.app'
+  ).replace(/\/+$/, ''),
   locality: 'Kimironko, Kigali, Rwanda',
   address: 'KG 667 Street, Kimironko, Kigali, Rwanda',
   hours: 'Mon – Sat: 8:00 AM – 6:00 PM CAT',

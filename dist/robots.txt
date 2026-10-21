@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://fortimesh-rwanda.tangydaisy16.chatgpt.site/sitemap.xml
+Sitemap: https://fortimeshrwanda.vercel.app/sitemap.xml
