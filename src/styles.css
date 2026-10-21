@@ -302,15 +302,15 @@ ul, ol { padding: 0; list-style: none; }
     linear-gradient(90deg, rgba(7, 15, 17, .9) 0%, rgba(7, 15, 17, .62) 38%, rgba(7, 15, 17, .12) 72%, rgba(7, 15, 17, .05) 100%),
     linear-gradient(0deg, rgba(7, 15, 17, .95) 0%, rgba(7, 15, 17, .2) 38%, transparent 60%);
 }
-.hero__content { position: relative; z-index: 2; padding-top: calc(var(--hdr-h) + 60px); }
-.hero__title { margin: 28px 0 0; max-width: 11ch; }
-.hero__row { display: flex; align-items: flex-end; justify-content: space-between; gap: 40px; margin-top: 40px; flex-wrap: wrap; }
-.hero__lead { max-width: 470px; font-size: clamp(1.05rem, 1.3vw, 1.2rem); line-height: 1.65; color: rgba(255, 255, 255, .78); }
-.hero__ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+.hero__content { position: relative; z-index: 2; padding-top: calc(var(--hdr-h) + 28px); }
+.hero__title { margin: 22px 0 0; max-width: 11ch; }
+.hero__row { display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; margin-top: 28px; flex-wrap: wrap; }
+.hero__lead { max-width: 470px; font-size: clamp(1rem, 1.25vw, 1.15rem); line-height: 1.62; color: rgba(255, 255, 255, .78); }
+.hero__ctas { display: flex; gap: 12px; flex-wrap: wrap; padding-right: clamp(0px, 5vw, 64px); }
 .hero__rail {
   position: relative; z-index: 2;
   display: grid; grid-template-columns: repeat(4, 1fr);
-  margin-top: clamp(48px, 7vh, 88px);
+  margin-top: clamp(28px, 4.5vh, 56px);
   border-top: 1px solid var(--line-dark);
 }
 .hero__cat {
@@ -908,6 +908,31 @@ html.vt-filter::view-transition-old(root), html.vt-filter::view-transition-new(r
 }
 
 /* Interactive Rebar & Gabion Calculators */
+.tile__terms {
+  display: block;
+  margin-top: 6px;
+  font-size: .74rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  color: var(--teal-l);
+}
+.calc-pair {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  align-items: stretch;
+}
+.calc-pair .calc {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+@media (max-width: 960px) {
+  .calc-pair {
+    grid-template-columns: 1fr;
+  }
+}
 .calc {
   margin: 44px 0 12px;
   padding: clamp(24px, 3.2vw, 38px);

@@ -666,6 +666,7 @@ const home = `
       <p class="hero__lead" data-reveal style="--i:6">We supply structural and reinforcement steel, heavy-duty gabion mesh, fencing wire, plumbing, electrical and essential building materials to contractors, engineers and developers across Rwanda.</p>
       <div class="hero__ctas" data-reveal style="--i:7">
         ${btn('/products/', 'Explore our products', 'primary')}
+        ${btn('#calculators', 'Material calculators', 'ghost', 'calc')}
       </div>
     </div>
   </div>
@@ -711,7 +712,7 @@ const home = `
       <a class="tile tile--${i}" href="/products/${p.slug}/" data-reveal="up" style="--i:${i % 3}">
         <div class="tile__media">${img(p.image, { sizes: i === 0 ? '(max-width: 960px) 100vw, 60vw' : i === 6 ? '100vw' : '(max-width: 640px) 100vw, (max-width: 960px) 50vw, 40vw' })}</div>
         <div class="tile__top"><span>${p.n} / 07</span><span>${esc(catName(p.cat))}</span></div>
-        <div class="tile__body"><h3>${p.name}</h3><p><span>${p.summary}</span></p></div>
+        <div class="tile__body"><h3>${p.name}</h3>${p.localTerms ? `<small class="tile__terms">${esc(p.localTerms)}</small>` : ''}<p><span>${p.summary}</span></p></div>
         <span class="tile__go">${icon('up')}</span>
       </a>`).join('')}
     </div>
@@ -735,7 +736,10 @@ const home = `
         <li class="pillar" data-reveal style="--i:1"><span class="pillar__n">02</span><div><h3>Quotes matched to your specification</h3><p>We verify bar diameters, section wall thicknesses, wire gauges, zinc/PVC coatings and quantities directly against your BoQ or drawings.</p></div></li>
         <li class="pillar" data-reveal style="--i:2"><span class="pillar__n">03</span><div><h3>Yard collection or nationwide delivery</h3><p>Collect directly from KG 667 Street in Kimironko, Kigali, or coordinate phased truck deliveries to your project site anywhere in Rwanda.</p></div></li>
       </ol>
-      <div data-reveal>${btn('/about/', 'About our company', 'dark')}</div>
+      <div class="prose__actions" data-reveal>
+        ${btn('/about/', 'About our company', 'dark')}
+        <button class="chip chip--print" type="button" data-print>${icon('print')} Print Company Profile (PDF)</button>
+      </div>
     </div>
   </div>
 </section>
@@ -764,11 +768,29 @@ const home = `
   </div>
 </section>
 
+<section class="section section--white on-light" id="calculators">
+  <div class="container">
+    <header class="sec-head">
+      <div>
+        <p class="label" data-reveal="fade"><span class="num">(05)</span> Project estimators</p>
+        <h2 class="h2 on-light" data-reveal="words">${split('Calculate *rebar tonnage* &amp; *gabion volume.*')}</h2>
+      </div>
+      <div class="sec-head__aside" data-reveal>
+        <p>Run instant quantity checks for deformed steel bars (D8–D32) and retaining wall gabion boxes, then transfer your numbers straight into a quotation.</p>
+      </div>
+    </header>
+    <div class="calc-pair">
+      ${calculatorSection('reinforcement-steel')}
+      ${calculatorSection('gabion-mesh')}
+    </div>
+  </div>
+</section>
+
 <section class="section process">
   <div class="container">
     <header class="sec-head">
       <div>
-        <p class="label" data-reveal="fade"><span class="num">(05)</span> How ordering works</p>
+        <p class="label" data-reveal="fade"><span class="num">(06)</span> How ordering works</p>
         <h2 class="h2 on-light" data-reveal="words">${split('From schedule to *site delivery.*')}</h2>
       </div>
       <div class="sec-head__aside" data-reveal>
@@ -777,6 +799,36 @@ const home = `
       </div>
     </header>
     ${stepsList()}
+  </div>
+</section>
+
+${faqSection}
+
+<section class="section on-light">
+  <div class="container">
+    <header class="sec-head">
+      <div>
+        <p class="label" data-reveal="fade"><span class="num">(08)</span> Kigali stockyard &amp; dispatch</p>
+        <h2 class="h2 on-light" data-reveal="words">${split('Visit us in *Kimironko, Kigali.*')}</h2>
+      </div>
+      <div class="sec-head__aside" data-reveal>
+        <p>Located on KG 667 Street, Kimironko Sector, Gasabo District—equipped for contractor walk-ins, yard collections and flatbed dispatches across Rwanda.</p>
+        <a class="link" href="/contact/">Full contact &amp; dispatch details ${icon('arrow')}</a>
+      </div>
+    </header>
+    <div class="map-card" data-reveal style="margin-top:0">
+      <div class="map-card__head">
+        <div>
+          <p class="label">Yard location &amp; directions</p>
+          <h3 class="h3">KG 667 Street, Kimironko — Kigali, Rwanda</h3>
+          <p>Direct sales desk: ${esc(site.contact.phone)} · ${esc(site.contact.email)}</p>
+        </div>
+        ${btn('https://www.google.com/maps/search/?api=1&query=KG+667+St+Kimironko+Kigali+Rwanda', 'Open in Google Maps', 'dark', 'up', { cls: 'btn--sm', attrs: ' target="_blank" rel="noopener noreferrer"' })}
+      </div>
+      <div class="map-card__frame">
+        <iframe title="Map showing Kimironko, Kigali — Fortimesh and Steels Rwanda Ltd" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://www.openstreetmap.org/export/embed.html?bbox=30.1140%2C-1.9560%2C30.1420%2C-1.9360&amp;layer=mapnik&amp;marker=-1.9460%2C30.1280"></iframe>
+      </div>
+    </div>
   </div>
 </section>
 ${cta}`;
@@ -1152,7 +1204,7 @@ fs.mkdirSync(dist, { recursive: true });
 const routes = [];
 const add = (route, opts) => { routes.push(opts.pathName); write(route, page(opts)); };
 
-add('', { title: 'Steel, Gabion Mesh & Construction Materials in Kigali, Rwanda', description: 'Fortimesh and Steels Rwanda Ltd supplies gabion baskets, chain-link fencing, deformed rebar, structural steel, plumbing, electrical and Sika construction materials from Kimironko, Kigali.', pathName: '/', body: home, active: 'home' });
+add('', { title: 'Steel, Gabion Mesh & Construction Materials in Kigali, Rwanda', description: 'Fortimesh and Steels Rwanda Ltd supplies gabion baskets, chain-link fencing, deformed rebar, structural steel, plumbing, electrical and Sika construction materials from Kimironko, Kigali.', pathName: '/', body: home, active: 'home', includeFaq: true });
 add('products', { title: 'Products & Specifications', description: 'Explore Fortimesh product families and specifications: gabion mesh, steel wire, reinforcement rebar, structural steel, plumbing, electrical and construction materials in Rwanda.', pathName: '/products/', body: catalog, active: 'products', image: 'ai-steel-yard', crumbs: [['Home', '/'], ['Products', '/products/']] });
 products.forEach((p, i) => add(`products/${p.slug}`, { title: p.name, description: `${p.summary} Call or WhatsApp ${site.contact.phone} for stock and delivery from Fortimesh in Kigali, Rwanda.`, pathName: `/products/${p.slug}/`, body: productPage(p, i), active: 'products', image: p.image, crumbs: [['Home', '/'], ['Products', '/products/'], [p.name, `/products/${p.slug}/`]], product: p }));
 add('about', { title: 'About Fortimesh', description: 'Learn about Fortimesh and Steels Rwanda Ltd, located at KG 667 Street, Kimironko, Kigali—supplying steel, gabion solutions and construction materials nationwide.', pathName: '/about/', body: about, active: 'about', image: 'beam', crumbs: [['Home', '/'], ['About', '/about/']] });
