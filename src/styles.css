@@ -525,10 +525,11 @@ ul, ol { padding: 0; list-style: none; }
 .ftr__bottom { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; padding-block: 26px 32px; border-top: 1px solid var(--line-dark); font-size: .8rem; color: rgba(255, 255, 255, .5); }
 .ftr__bottom a { text-decoration: underline; text-underline-offset: 3px; }
 .ftr__word {
-  margin-bottom: -.2em; text-align: center; white-space: nowrap; pointer-events: none; user-select: none;
-  font: 800 clamp(5rem, 21vw, 21rem)/.8 var(--f-display); font-stretch: 75%; letter-spacing: -.04em;
-  color: transparent; -webkit-text-stroke: 1px rgba(255, 255, 255, .08);
-  background: linear-gradient(180deg, rgba(70, 195, 205, .14), transparent 75%); -webkit-background-clip: text; background-clip: text;
+  padding: 8px var(--gutter) clamp(28px, 3.5vw, 48px);
+  text-align: center; white-space: nowrap; pointer-events: none; user-select: none;
+  font: 800 clamp(3.2rem, 16.5vw, 15.5rem)/1 var(--f-display); font-stretch: 75%; letter-spacing: -.03em;
+  color: transparent; -webkit-text-stroke: 1px rgba(255, 255, 255, .12);
+  background: linear-gradient(180deg, rgba(70, 195, 205, .22) 0%, rgba(70, 195, 205, .06) 100%); -webkit-background-clip: text; background-clip: text;
 }
 
 /* =========================================================================
