@@ -13,19 +13,46 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const menu = document.querySelector('#menu');
   if (!hdr) return;
 
-  let lastY = scrollY;
-  const onScroll = () => {
-    const y = scrollY;
+  let lastY = Math.max(0, scrollY);
+  let hidden = false;
+  let ticking = false;
+
+  const updateHeader = () => {
+    ticking = false;
+    const y = Math.max(0, scrollY);
+    const dy = y - lastY;
     hdr.classList.toggle('is-solid', y > 36);
-    hdr.classList.toggle('is-hidden', y > 220 && y > lastY + 6 && !document.body.classList.contains('menu-open'));
+
+    if (y <= 220 || document.body.classList.contains('menu-open')) {
+      hidden = false;
+    } else if (dy > 10) {
+      hidden = true;
+    } else if (dy < -8) {
+      hidden = false;
+    }
+    hdr.classList.toggle('is-hidden', hidden);
     lastY = y;
   };
-  onScroll();
-  addEventListener('scroll', onScroll, { passive: true });
+
+  updateHeader();
+  addEventListener(
+    'scroll',
+    () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(updateHeader);
+      }
+    },
+    { passive: true },
+  );
 
   if (!toggle || !menu) return;
   const setOpen = (open) => {
     document.body.classList.toggle('menu-open', open);
+    if (open) {
+      hidden = false;
+      hdr.classList.remove('is-hidden');
+    }
     toggle.setAttribute('aria-expanded', String(open));
     toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
     menu.setAttribute('aria-hidden', String(!open));
@@ -89,31 +116,20 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   counters.forEach((el) => cio.observe(el));
 })();
 
-/* ---------- 3. Scroll-linked highlight & subtle parallax ---------- */
+/* ---------- 3. Scroll-linked highlight ---------- */
 (() => {
   const hi = document.querySelector('[data-highlight]');
   const words = hi ? [...hi.querySelectorAll('.hw')] : [];
-  const pxEls = reduceMotion ? [] : [...document.querySelectorAll('[data-parallax]')];
-  if (!words.length && !pxEls.length) return;
+  if (!words.length) return;
 
   let raf = 0;
   const update = () => {
     raf = 0;
     const vh = innerHeight;
-    if (words.length) {
-      const r = hi.getBoundingClientRect();
-      const progress = Math.min(1, Math.max(0, (vh * 0.78 - r.top) / (r.height + vh * 0.32)));
-      const litCount = Math.round(progress * words.length);
-      words.forEach((w, i) => w.classList.toggle('is-lit', i < litCount));
-    }
-    for (const el of pxEls) {
-      const r = el.getBoundingClientRect();
-      if (r.bottom < -100 || r.top > vh + 100) continue;
-      const speed = Number(el.dataset.parallax) || 0.14;
-      const center = (r.top + r.height / 2 - vh / 2) / vh;
-      const img = el.querySelector('img');
-      if (img) img.style.setProperty('--py', `${(-center * speed * 140).toFixed(1)}px`);
-    }
+    const r = hi.getBoundingClientRect();
+    const progress = Math.min(1, Math.max(0, (vh * 0.78 - r.top) / (r.height + vh * 0.32)));
+    const litCount = Math.round(progress * words.length);
+    words.forEach((w, i) => w.classList.toggle('is-lit', i < litCount));
   };
   const requestUpdate = () => {
     if (!raf) raf = requestAnimationFrame(update);

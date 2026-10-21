@@ -35,9 +35,10 @@
 
 /* ---------- Reset & base ---------- */
 *, *::before, *::after { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; scroll-padding-top: calc(var(--hdr-h) + 16px); }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: calc(var(--hdr-h) + 16px); overflow-x: clip; }
 body {
   margin: 0;
+  overflow-x: clip;
   background: var(--paper);
   color: var(--text);
   font: 400 1rem/1.65 var(--f-body);
@@ -186,14 +187,12 @@ ul, ol { padding: 0; list-style: none; }
   background-size: 36px 36px;
   -webkit-mask-image: radial-gradient(ellipse 55% 70% at 88% 18%, #000 0%, transparent 70%);
   mask-image: radial-gradient(ellipse 55% 70% at 88% 18%, #000 0%, transparent 70%);
-  animation: mesh-drift 26s linear infinite;
 }
 .mesh--left { -webkit-mask-image: radial-gradient(ellipse 50% 80% at 0% 100%, #000, transparent 70%); mask-image: radial-gradient(ellipse 50% 80% at 0% 100%, #000, transparent 70%); }
-@keyframes mesh-drift { to { background-position: 72px 36px; } }
 
-/* ---------- Parallax media ---------- */
+/* ---------- Media containers ---------- */
 .px { position: relative; overflow: hidden; }
-.px > img { position: absolute; left: 0; top: -10%; width: 100%; height: 120%; object-fit: cover; translate: 0 var(--py, 0); will-change: translate; }
+.px > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 
 /* =========================================================================
    Header
@@ -572,8 +571,8 @@ ul, ol { padding: 0; list-style: none; }
 .filters__status { font-size: .875rem; color: var(--muted); }
 
 .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-.card { position: relative; display: flex; flex-direction: column; background: var(--white); border: 1px solid var(--line); transition: border-color .5s var(--ease), box-shadow .6s var(--ease), translate .6s var(--ease); }
-.card:hover { border-color: transparent; box-shadow: 0 30px 60px -28px rgba(10, 30, 34, .35); translate: 0 -6px; }
+.card { position: relative; display: flex; flex-direction: column; background: var(--white); border: 1px solid var(--line); transition: border-color .5s var(--ease), box-shadow .6s var(--ease); }
+.card:hover { border-color: var(--teal); box-shadow: 0 30px 60px -28px rgba(10, 30, 34, .35); }
 .card__media { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: var(--paper-2); }
 .card__media img { width: 100%; height: 100%; object-fit: cover; transition: scale 1.2s var(--ease); }
 .card:hover .card__media img { scale: 1.06; }
