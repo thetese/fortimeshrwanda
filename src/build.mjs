@@ -228,7 +228,7 @@ const paths = {
   pin: '<path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2.4"/>',
   phone: '<path d="M5 4h3l2 5-2.5 1.5a11 11 0 0 0 6 6L15 14l5 2v3a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z"/>',
   mail: '<rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="m3.5 6 8.5 7 8.5-7"/>',
-  chat: '<path d="M4 20l1.3-3.9A8 8 0 1 1 8 19.2Z"/>',
+  chat: '<path d="M3.5 20.5l1.4-4.1a8.5 8.5 0 1 1 3.2 3.2Z"/><path d="M9.2 9.4a5.8 5.8 0 0 0 5.4 5.4l1.3-1.1a.6.6 0 0 1 .6-.1l1.6.7a.6.6 0 0 1 .3.7 2.2 2.2 0 0 1-2.2 1.7A7.9 7.9 0 0 1 8 9.2a2.2 2.2 0 0 1 1.7-2.2.6.6 0 0 1 .7.3l.7 1.6a.6.6 0 0 1-.1.6Z"/>',
   copy: '<rect x="8" y="8" width="12" height="12" rx="1.5"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/>',
   share: '<path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>',
   doc: '<path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8Z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>',
@@ -362,7 +362,7 @@ const footer = `
   <div class="ftr__word" aria-hidden="true">FORTIMESH</div>
 </footer>
 <a class="wa-float" href="https://wa.me/${site.contact.whatsapp}?text=${encodeURIComponent('Hello Fortimesh Rwanda, I would like to inquire about material availability and pricing.')}" target="_blank" rel="noopener noreferrer" aria-label="Chat with Fortimesh sales desk on WhatsApp (${esc(site.contact.phone)})">
-  <span class="wa-float__icon">${icon('chat')}</span>
+  <span class="wa-float__icon" aria-hidden="true">${icon('chat')}<i class="wa-float__dot"></i></span>
   <span class="wa-float__text"><strong>WhatsApp Sales</strong><small>${esc(site.contact.phone)}</small></span>
 </a>`;
 

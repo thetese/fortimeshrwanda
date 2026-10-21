@@ -1147,50 +1147,93 @@ html.vt-filter::view-transition-old(root), html.vt-filter::view-transition-new(r
 /* Floating WhatsApp Sales Desk Button */
 .wa-float {
   position: fixed;
-  right: 22px;
-  bottom: 22px;
+  right: clamp(16px, 2.4vw, 28px);
+  bottom: clamp(16px, 2.4vw, 28px);
   z-index: 85;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 16px 10px 12px;
-  background: var(--ink-2);
+  gap: 0;
+  padding: 5px;
+  border-radius: 999px;
+  background: rgba(10, 20, 22, .9);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   color: var(--white);
-  border: 1px solid rgba(70, 195, 205, .35);
-  box-shadow: 0 14px 34px rgba(10, 20, 22, .32);
-  transition: transform .25s var(--ease), border-color .25s, background-color .25s;
-}
-.wa-float:hover {
-  transform: translateY(-2px);
-  background: var(--teal);
-  border-color: var(--teal-l);
+  border: 1px solid rgba(70, 195, 205, .28);
+  box-shadow: 0 14px 34px -6px rgba(7, 15, 17, .55), 0 0 0 1px rgba(255, 255, 255, .04) inset;
+  transition: background-color .3s var(--ease), border-color .3s var(--ease), transform .3s var(--ease), box-shadow .3s var(--ease);
 }
 .wa-float__icon {
-  width: 34px;
-  height: 34px;
+  position: relative;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
   display: grid;
   place-items: center;
-  background: #1fa855;
+  flex: none;
+  background: linear-gradient(145deg, #25d366 0%, #128c7e 100%);
   color: var(--white);
+  box-shadow: 0 6px 16px rgba(37, 211, 102, .32);
+  transition: transform .35s var(--ease);
 }
 .wa-float__icon svg {
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
+  stroke-width: 1.75;
+}
+.wa-float__dot {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #4ade80;
+  border: 2px solid var(--ink);
 }
 .wa-float__text {
   display: flex;
   flex-direction: column;
   line-height: 1.15;
+  white-space: nowrap;
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  padding-left: 0;
+  padding-right: 0;
+  transition: max-width .38s var(--ease), opacity .28s var(--ease), padding .35s var(--ease);
 }
 .wa-float__text strong {
   font-family: var(--f-display);
-  font-size: .78rem;
-  letter-spacing: .06em;
+  font-size: .76rem;
+  font-weight: 700;
+  letter-spacing: .08em;
   text-transform: uppercase;
+  color: var(--white);
 }
 .wa-float__text small {
-  font-size: .72rem;
+  margin-top: 2px;
+  font-size: .74rem;
+  font-weight: 500;
   color: var(--teal-l);
+}
+.wa-float:hover,
+.wa-float:focus-visible {
+  transform: translateY(-3px);
+  border-color: rgba(70, 195, 205, .6);
+  background: rgba(16, 32, 35, .96);
+  box-shadow: 0 20px 42px -8px rgba(7, 15, 17, .65), 0 0 24px -4px rgba(37, 211, 102, .25);
+}
+.wa-float:hover .wa-float__icon,
+.wa-float:focus-visible .wa-float__icon {
+  transform: scale(1.04);
+}
+.wa-float:hover .wa-float__text,
+.wa-float:focus-visible .wa-float__text {
+  max-width: 180px;
+  opacity: 1;
+  padding-left: 12px;
+  padding-right: 14px;
 }
 
 @media (max-width: 760px) {
@@ -1209,7 +1252,7 @@ html.vt-filter::view-transition-old(root), html.vt-filter::view-transition-new(r
   .wa-float {
     right: 14px;
     bottom: 14px;
-    padding: 10px;
+    padding: 4px;
   }
   .wa-float__text {
     display: none;
