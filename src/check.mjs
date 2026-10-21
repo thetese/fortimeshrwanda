@@ -13,12 +13,15 @@ function walk(dir) {
 }
 
 walk(dist);
-if (pages.length !== 15) {
-  throw new Error(`Expected 15 HTML files (14 pages + 404.html), found ${pages.length}`);
+if (pages.length !== 14) {
+  throw new Error(`Expected 14 HTML files (13 pages + 404.html), found ${pages.length}`);
 }
 
 for (const file of pages) {
   const html = fs.readFileSync(file, 'utf8');
+  if (/AI-generated|ai-hero-kigali|ai-gabion-hills|ai-steel-yard|image-credits/i.test(html)) {
+    throw new Error(`Unexpected AI or image-credits reference found in ${file}`);
+  }
   const is404 = path.basename(file) === '404.html';
   if (!html.includes('<main id="main">') || !html.includes('name="description"') || (!is404 && !html.includes('rel="canonical"'))) {
     throw new Error(`Missing semantic or SEO markup: ${file}`);

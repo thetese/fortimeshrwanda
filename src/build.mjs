@@ -49,7 +49,7 @@ const catName = (id) => categories.find((c) => c.id === id).name;
 
 const products = [
   {
-    slug: 'gabion-mesh', name: 'Gabion mesh', cat: 'gabion-wire', image: 'ai-gabion-hills', gallery: ['gabion'],
+    slug: 'gabion-mesh', name: 'Gabion mesh', cat: 'gabion-wire', image: 'gabion-hills', gallery: ['gabion'],
     localTerms: 'FR: Cages de gabion, matelas Reno · RW: Gabiyo (uruzitiro rw’amabuye)',
     summary: 'Heavy-duty woven and welded gabion baskets and mattresses for retaining walls, slope stabilisation and erosion control.',
     description: 'We supply double-twisted hexagonal woven and welded gabion baskets and mattresses engineered for Rwanda’s hillside terrain, road corridors and riverbanks. Available in heavy galvanised and PVC-coated finishes with matching selvedge and lacing wire. Share your project drawings, box dimensions and quantity to receive a fast, itemised quotation.',
@@ -63,7 +63,7 @@ const products = [
     request: ['Basket or mattress dimensions (L × W × H)', 'Mesh aperture (e.g. 80×100 mm) and internal diaphragms', 'Wire diameter and finish (heavy galvanised or PVC-coated)', 'Total unit count and site delivery location'],
   },
   {
-    slug: 'steel-wire', name: 'Steel wire products', cat: 'gabion-wire', image: 'wire', gallery: ['ai-steel-yard'],
+    slug: 'steel-wire', name: 'Steel wire products', cat: 'gabion-wire', image: 'wire', gallery: ['steel-yard'],
     localTerms: 'FR: Fil de recuit (fil d’attache), grillage, fil barbelé · RW: Umukwege, senyenge',
     summary: 'Galvanised chain-link fencing, barbed wire, binding wire and heavy-duty coils for site fixing, fencing and fabrication.',
     description: 'From soft annealed black binding wire for daily rebar tying to galvanised chain-link mesh and high-tensile barbed wire for perimeter fencing, we stock reliable wire products for contractors and fabricators across Rwanda. Tell us the gauge, coating, roll length and quantity required for immediate stock confirmation.',
@@ -91,7 +91,7 @@ const products = [
     request: ['Bar schedule or itemised diameter breakdown (D8 – D32)', 'Required steel grade and standard compliance', 'BRC mesh ref numbers or sheet/roll counts if needed', 'Total tonnage or bar count and phased delivery dates'],
   },
   {
-    slug: 'structural-steel', name: 'Structural steel', cat: 'steel', image: 'beam', gallery: ['ai-steel-yard'],
+    slug: 'structural-steel', name: 'Structural steel', cat: 'steel', image: 'beam', gallery: ['steel-yard'],
     localTerms: 'FR: Tube carré / rectangulaire (SHS/RHS), poutrelles IPE/HEB, cornières · RW: Ibyuma by’igisenge, tibe',
     summary: 'I-beams, H-beams, square and rectangular hollow sections (SHS/RHS), angle iron, channels and galvanised steel pipes.',
     description: 'Our structural steel range supports roof trusses, warehouse portal frames, multi-storey steel structures and custom fabrication work. We supply hot-rolled open sections alongside cold-formed hollow sections and galvanised circular pipes. Share your fabrication drawings or cutting list for a complete section-by-section quote.',
@@ -169,7 +169,7 @@ const faqs = [
 ];
 
 const applications = [
-  { n: '01', label: 'Civil & hillside engineering', title: 'Hold the ground.', image: 'ai-gabion-hills', products: ['gabion-mesh', 'steel-wire'],
+  { n: '01', label: 'Civil & hillside engineering', title: 'Hold the ground.', image: 'gabion-hills', products: ['gabion-mesh', 'steel-wire'],
     text: 'Rwanda’s terraced hills and road corridors demand durable slope protection. We supply heavy galvanised and PVC-coated gabion baskets, mattresses, lacing wire and perimeter chain-link fencing built to withstand heavy rainfall and earth pressure.' },
   { n: '02', label: 'Reinforced concrete & steel frames', title: 'Build the frame.', image: 'beam', products: ['reinforcement-steel', 'structural-steel'],
     text: 'From D8–D32 deformed rebar and BRC mesh in the foundation to I-beams, hollow sections and galvanised pipes in the roof structure, we deliver structural steel against your engineer’s bar schedule and cutting list.' },
@@ -185,20 +185,20 @@ const steps = [
   { title: 'Coordinate site delivery', text: 'Collect from our Kigali stockyard on KG 667 Street or schedule direct dispatch to your project site anywhere in Rwanda.' },
 ];
 
-/* Image metadata. `kind: 'ai'` images were generated for this site and are disclosed as such. */
+/* Image metadata */
 const photos = {
-  'ai-hero-kigali': { kind: 'ai', title: 'Hillside construction, Kigali-style terrain', alt: 'A concrete building under construction on green terraced hills at sunrise, with rebar columns in the foreground' },
-  'ai-gabion-hills': { kind: 'ai', title: 'Gabion retaining wall on a hillside road', alt: 'A long stone-filled gabion retaining wall following a red-earth road across terraced hills' },
-  'ai-steel-yard': { kind: 'ai', title: 'Steel stockyard', alt: 'Bundles of ribbed reinforcement bar, wire coils and steel beams stored in a bright warehouse' },
-  'hero-site': { kind: 'photo', title: 'Construction site', source: 'Pexels', url: 'https://www.pexels.com/photo/workers-at-a-construction-site-11580364/', alt: 'Workers spreading across a reinforcement steel mesh laid over a foundation slab' },
-  gabion: { kind: 'photo', title: 'Gabion mesh close-up', source: 'Unsplash', url: 'https://unsplash.com/photos/gabion-wall-filled-with-light-colored-rocks-Cmkb8xnGmlE', alt: 'Close-up of light-coloured stones held inside a welded gabion mesh' },
-  wire: { kind: 'photo', title: 'Steel wire', source: 'Unsplash', url: 'https://unsplash.com/photos/a-close-up-of-a-coil-of-wire-9y6hRUIpifY', alt: 'Close-up of a coil of steel wire' },
-  rebar: { kind: 'photo', title: 'Reinforcement steel', source: 'Pexels', url: 'https://www.pexels.com/photo/gray-metal-bars-in-close-up-shot-5623179/', alt: 'Tightly stacked ribbed reinforcement bars' },
-  beam: { kind: 'photo', title: 'Structural steel', source: 'Pexels', url: 'https://www.pexels.com/photo/metal-beams-in-a-construction-site-3818947/', alt: 'A structural steel frame with bolted beam connections under construction' },
-  pipe: { kind: 'photo', title: 'Plumbing', source: 'Pexels', url: 'https://www.pexels.com/photo/pipes-instalation-on-building-wall-12778827/', alt: 'Plumbing pipework installed along a building wall' },
-  electric: { kind: 'photo', title: 'Electrical work', source: 'Pexels', url: 'https://www.pexels.com/photo/construction-workers-installing-cables-at-train-station-36289775/', alt: 'Workers installing bundles of electrical cable from an elevated platform' },
-  blocks: { kind: 'photo', title: 'General construction materials', source: 'Pexels', url: 'https://www.pexels.com/photo/concrete-construction-site-with-building-materials-36162732/', alt: 'Formwork boards and props stacked beside fresh concrete walls on a building site' },
-  feature: { kind: 'photo', title: 'Reinforcement work', source: 'Pexels', url: 'https://www.pexels.com/photo/builder-standing-on-rebar-at-construction-site-19407552/', alt: 'A builder tying reinforcement steel on a concrete slab' },
+  'hero-kigali': { title: 'Hillside construction, Kigali terrain', alt: 'A concrete building under construction on green terraced hills at sunrise, with rebar columns in the foreground' },
+  'gabion-hills': { title: 'Gabion retaining wall on a hillside road', alt: 'A long stone-filled gabion retaining wall following a road across terraced hills' },
+  'steel-yard': { title: 'Steel stockyard', alt: 'Bundles of ribbed reinforcement bar, wire coils and steel beams stored in a warehouse' },
+  'hero-site': { title: 'Construction site', alt: 'Workers spreading across a reinforcement steel mesh laid over a foundation slab' },
+  gabion: { title: 'Gabion mesh close-up', alt: 'Close-up of light-coloured stones held inside a welded gabion mesh' },
+  wire: { title: 'Steel wire', alt: 'Close-up of a coil of steel wire' },
+  rebar: { title: 'Reinforcement steel', alt: 'Tightly stacked ribbed reinforcement bars' },
+  beam: { title: 'Structural steel', alt: 'A structural steel frame with bolted beam connections under construction' },
+  pipe: { title: 'Plumbing', alt: 'Plumbing pipework installed along a building wall' },
+  electric: { title: 'Electrical work', alt: 'Workers installing bundles of electrical cable from an elevated platform' },
+  blocks: { title: 'General construction materials', alt: 'Formwork boards and props stacked beside fresh concrete walls on a building site' },
+  feature: { title: 'Reinforcement work', alt: 'A builder tying reinforcement steel on a concrete slab' },
 };
 
 /* =========================================================================
@@ -342,7 +342,6 @@ const footer = `
         <a href="/applications/">Applications</a>
         <a href="/contact/">Contact &amp; location</a>
         <a href="/quote/">Request a quote</a>
-        <a href="/image-credits/">Image credits</a>
       </nav>
       <nav class="ftr__col" aria-label="Products">
         <h2>Products</h2>
@@ -356,7 +355,7 @@ const footer = `
     </div>
     <div class="ftr__bottom">
       <span>© ${year} ${site.name}. All rights reserved.</span>
-      <span>KG 667 Street, Kimironko, Kigali · <a href="/image-credits/">Image credits</a></span>
+      <span>KG 667 Street, Kimironko, Kigali, Rwanda</span>
     </div>
   </div>
   <div class="ftr__word" aria-hidden="true">FORTIMESH</div>
@@ -368,7 +367,7 @@ const footer = `
 
 const fonts = 'https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Inter:wght@400..700&display=swap';
 
-function page({ title, description, pathName, body, active = '', image = 'ai-hero-kigali', crumbs, product, includeFaq = false }) {
+function page({ title, description, pathName, body, active = '', image = 'hero-kigali', crumbs, product, includeFaq = false }) {
   const url = site.origin + pathName;
   const fullTitle = pathName === '/' ? `${site.name} | ${title}` : `${title} | ${site.short} Rwanda`;
   const imgMeta = manifest[image];
@@ -657,7 +656,7 @@ function calculatorSection(slug) {
    ========================================================================= */
 const home = `
 <section class="hero">
-  <div class="hero__media px" data-parallax="0.22">${img('ai-hero-kigali', { eager: true, sizes: '100vw' })}</div>
+  <div class="hero__media px" data-parallax="0.22">${img('hero-kigali', { eager: true, sizes: '100vw' })}</div>
   ${mesh()}
   <div class="container hero__content">
     <p class="eyebrow eyebrow--light" data-reveal="fade">Steel · Gabions · Construction Materials — Kigali, Rwanda</p>
@@ -834,7 +833,7 @@ ${faqSection}
 ${cta}`;
 
 const catalog = `
-${pageHero({ label: 'Product catalogue', title: 'Materials with a *job to do.*', image: 'ai-steel-yard', crumbs: [['Home', '/'], ['Products', '/products/']], lead: 'Explore our seven core supply families. Select any product family for standard dimensions, grades and a direct quotation.' })}
+${pageHero({ label: 'Product catalogue', title: 'Materials with a *job to do.*', image: 'steel-yard', crumbs: [['Home', '/'], ['Products', '/products/']], lead: 'Explore our seven core supply families. Select any product family for standard dimensions, grades and a direct quotation.' })}
 <section class="section">
   <div class="container">
     <div class="filters__bar">
@@ -1004,7 +1003,7 @@ const infoRow = (ic, label, value, note, href) => {
 };
 
 const contact = `
-${pageHero({ label: 'Contact', title: 'Start the *conversation.*', image: 'ai-hero-kigali', position: '20% 50%', short: true, crumbs: [['Home', '/'], ['Contact', '/contact/']], lead: 'Reach our Kimironko, Kigali sales desk directly by phone, WhatsApp or email—or prepare a structured material request online.' })}
+${pageHero({ label: 'Contact', title: 'Start the *conversation.*', image: 'hero-kigali', position: '20% 50%', short: true, crumbs: [['Home', '/'], ['Contact', '/contact/']], lead: 'Reach our Kimironko, Kigali sales desk directly by phone, WhatsApp or email—or prepare a structured material request online.' })}
 <section class="section on-light">
   <div class="container contact-grid">
     <div>
@@ -1156,24 +1155,6 @@ ${pageHero({ label: 'Request a quote', title: 'Tell us what the *job needs.*', i
 </section>
 ${faqSection}`;
 
-const credits = `
-${pageHero({ label: 'Image credits', title: 'Imagery with *context.*', image: 'gabion', short: true, crumbs: [['Home', '/'], ['Image credits', '/image-credits/']], lead: 'Images on this site show representative construction materials and work. They do not depict verified Fortimesh stock, staff, facilities or completed projects.' })}
-<section class="section on-light">
-  <div class="container">
-    <div class="credits">
-      ${Object.entries(photos).map(([name, ph], i) => `
-      <article class="credit" data-reveal style="--i:${i % 3}">
-        <figure>${img(name, { sizes: '(max-width: 640px) 100vw, 400px', alt: '' })}</figure>
-        <div class="credit__body">
-          <span class="credit__kind">${ph.kind === 'ai' ? 'AI-generated illustration' : 'Representative photograph'}</span>
-          <h3>${ph.title}</h3>
-          <p>${ph.kind === 'ai' ? 'Created for this site. Does not depict a real Fortimesh site, product, stock or project.' : `Source: <a href="${ph.url}" target="_blank" rel="noopener noreferrer">${ph.source}</a>`}</p>
-        </div>
-      </article>`).join('')}
-    </div>
-  </div>
-</section>`;
-
 const notFound = `
 <section class="phero nf">
   <div class="phero__media px" data-parallax="0.18">${img('beam', { eager: true, alt: '' })}</div>
@@ -1205,13 +1186,12 @@ const routes = [];
 const add = (route, opts) => { routes.push(opts.pathName); write(route, page(opts)); };
 
 add('', { title: 'Steel, Gabion Mesh & Construction Materials in Kigali, Rwanda', description: 'Fortimesh and Steels Rwanda Ltd supplies gabion baskets, chain-link fencing, deformed rebar, structural steel, plumbing, electrical and Sika construction materials from Kimironko, Kigali.', pathName: '/', body: home, active: 'home', includeFaq: true });
-add('products', { title: 'Products & Specifications', description: 'Explore Fortimesh product families and specifications: gabion mesh, steel wire, reinforcement rebar, structural steel, plumbing, electrical and construction materials in Rwanda.', pathName: '/products/', body: catalog, active: 'products', image: 'ai-steel-yard', crumbs: [['Home', '/'], ['Products', '/products/']] });
+add('products', { title: 'Products & Specifications', description: 'Explore Fortimesh product families and specifications: gabion mesh, steel wire, reinforcement rebar, structural steel, plumbing, electrical and construction materials in Rwanda.', pathName: '/products/', body: catalog, active: 'products', image: 'steel-yard', crumbs: [['Home', '/'], ['Products', '/products/']] });
 products.forEach((p, i) => add(`products/${p.slug}`, { title: p.name, description: `${p.summary} Call or WhatsApp ${site.contact.phone} for stock and delivery from Fortimesh in Kigali, Rwanda.`, pathName: `/products/${p.slug}/`, body: productPage(p, i), active: 'products', image: p.image, crumbs: [['Home', '/'], ['Products', '/products/'], [p.name, `/products/${p.slug}/`]], product: p }));
 add('about', { title: 'About Fortimesh', description: 'Learn about Fortimesh and Steels Rwanda Ltd, located at KG 667 Street, Kimironko, Kigali—supplying steel, gabion solutions and construction materials nationwide.', pathName: '/about/', body: about, active: 'about', image: 'beam', crumbs: [['Home', '/'], ['About', '/about/']] });
 add('applications', { title: 'Applications', description: 'Explore civil, structural and MEP applications for Fortimesh gabion baskets, rebar, hollow sections, plumbing and electrical supplies across Rwanda.', pathName: '/applications/', body: applicationsPage, active: 'applications', image: 'hero-site', crumbs: [['Home', '/'], ['Applications', '/applications/']] });
 add('contact', { title: 'Contact & Kigali Location', description: `Contact Fortimesh and Steels Rwanda Ltd at KG 667 Street, Kimironko, Kigali. Call or WhatsApp ${site.contact.phone} or email ${site.contact.email}.`, pathName: '/contact/', body: contact, active: 'contact', crumbs: [['Home', '/'], ['Contact', '/contact/']], includeFaq: true });
 add('quote', { title: 'Request a Quote', description: `Request an itemised quotation for gabion mesh, rebar, structural steel and building materials from Fortimesh in Kigali (${site.contact.phone}).`, pathName: '/quote/', body: quote, active: 'quote', image: 'wire', crumbs: [['Home', '/'], ['Request a quote', '/quote/']], includeFaq: true });
-add('image-credits', { title: 'Image Credits', description: 'Sources and disclosures for the imagery used on the Fortimesh website.', pathName: '/image-credits/', body: credits, image: 'gabion', crumbs: [['Home', '/'], ['Image credits', '/image-credits/']] });
 fs.writeFileSync(path.join(dist, '404.html'), page({ title: 'Page not found', description: 'The page you were looking for could not be found.', pathName: '/404.html', body: notFound, image: 'beam' }).replace('<link rel="canonical" href="' + site.origin + '/404.html">', '<meta name="robots" content="noindex">'));
 
 const robotsTxt = `User-agent: *\nAllow: /\nSitemap: ${site.origin}/sitemap.xml\n`;

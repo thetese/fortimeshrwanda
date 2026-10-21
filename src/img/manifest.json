@@ -1,5 +1,5 @@
 {
-  "ai-gabion-hills": {
+  "gabion-hills": {
     "width": 1264,
     "height": 848,
     "widths": [
@@ -7,7 +7,7 @@
       1264
     ]
   },
-  "ai-hero-kigali": {
+  "hero-kigali": {
     "width": 1376,
     "height": 768,
     "widths": [
@@ -16,7 +16,7 @@
       1376
     ]
   },
-  "ai-steel-yard": {
+  "steel-yard": {
     "width": 1264,
     "height": 848,
     "widths": [
