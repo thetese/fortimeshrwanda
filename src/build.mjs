@@ -20,7 +20,7 @@ const site = {
   ).replace(/\/+$/, ''),
   locality: 'Kimironko, Kigali, Rwanda',
   address: 'KG 667 Street, Kimironko, Kigali, Rwanda',
-  hours: 'Mon – Sat: 8:00 AM – 6:00 PM CAT',
+  hours: 'Confirm visit & yard collection hours by phone or WhatsApp',
   leadership: 'Mutuyimana Jean Bosco, Managing Director',
   directory: 'https://pinkbazaar.in/service/fortimesh-and-steels-rwanda-ltd-113232/',
   social: {
@@ -361,14 +361,6 @@ function page({ title, description, pathName, body, active = '', image = 'ai-her
       addressLocality: 'Kigali',
       addressCountry: 'RW',
     },
-    openingHoursSpecification: [
-      {
-        '@type': 'OpeningHoursSpecification',
-        dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-        opens: '08:00',
-        closes: '18:00',
-      },
-    ],
     sameAs: [site.social?.instagram, site.directory].filter(Boolean),
   };
 
@@ -396,7 +388,6 @@ function page({ title, description, pathName, body, active = '', image = 'ai-her
       offers: {
         '@type': 'Offer',
         url,
-        availability: 'https://schema.org/InStock',
         areaServed: { '@type': 'Country', name: 'Rwanda' },
         seller: { '@id': `${site.origin}/#organization` },
       },
@@ -680,8 +671,9 @@ function productPage(p, i) {
       <div class="pd-overview">
         <p class="label" data-reveal="fade">Overview</p>
         <p class="lead-lg" data-reveal>${p.description}</p>
-        <h2 class="h3" data-reveal>Typical specifications &amp; range</h2>
+        <h2 class="h3" data-reveal>Typical specifications &amp; options</h2>
         <dl class="spec-grid" data-reveal>${p.specs.map(([k, v]) => `<div class="spec-card"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
+        <p class="note" data-reveal>Specifications above reflect typical industry sizes and options in this category. Contact our Kigali desk to confirm current stock and exact grades for your order.</p>
         <h2 class="h3" data-reveal>Common applications</h2>
         <ul class="num-list">${p.uses.map((u, k) => `<li data-reveal style="--i:${k}"><span>0${k + 1}</span><strong>${u}</strong></li>`).join('')}</ul>
       </div>
@@ -912,7 +904,7 @@ ${pageHero({ label: 'Request a quote', title: 'Tell us what the *job needs.*', i
 </section>`;
 
 const credits = `
-${pageHero({ label: 'Image credits', title: 'Imagery with *context.*', image: 'gabion', short: true, crumbs: [['Home', '/'], ['Image credits', '/image-credits/']], lead: 'Images on this site show representative construction materials and applications across civil, structural and building works.' })}
+${pageHero({ label: 'Image credits', title: 'Imagery with *context.*', image: 'gabion', short: true, crumbs: [['Home', '/'], ['Image credits', '/image-credits/']], lead: 'Images on this site show representative construction materials and work. They do not depict verified Fortimesh stock, staff, facilities or completed projects.' })}
 <section class="section on-light">
   <div class="container">
     <div class="credits">
@@ -920,9 +912,9 @@ ${pageHero({ label: 'Image credits', title: 'Imagery with *context.*', image: 'g
       <article class="credit" data-reveal style="--i:${i % 3}">
         <figure>${img(name, { sizes: '(max-width: 640px) 100vw, 400px', alt: '' })}</figure>
         <div class="credit__body">
-          <span class="credit__kind">${ph.kind === 'ai' ? 'Custom architectural illustration' : 'Representative photograph'}</span>
+          <span class="credit__kind">${ph.kind === 'ai' ? 'AI-generated illustration' : 'Representative photograph'}</span>
           <h3>${ph.title}</h3>
-          <p>${ph.kind === 'ai' ? 'Created for Fortimesh Rwanda to illustrate typical regional terrain and material applications.' : `Source: <a href="${ph.url}" target="_blank" rel="noopener noreferrer">${ph.source}</a>`}</p>
+          <p>${ph.kind === 'ai' ? 'Created for this site. Does not depict a real Fortimesh site, product, stock or project.' : `Source: <a href="${ph.url}" target="_blank" rel="noopener noreferrer">${ph.source}</a>`}</p>
         </div>
       </article>`).join('')}
     </div>

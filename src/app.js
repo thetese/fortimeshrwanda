@@ -14,6 +14,8 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (!hdr) return;
 
   let lastY = Math.max(0, scrollY);
+  let anchorY = lastY;
+  let lastDir = 0;
   let hidden = false;
   let ticking = false;
 
@@ -23,11 +25,20 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const dy = y - lastY;
     hdr.classList.toggle('is-solid', y > 36);
 
+    if (Math.abs(dy) >= 1) {
+      const dir = dy > 0 ? 1 : -1;
+      if (dir !== lastDir) {
+        anchorY = lastY;
+        lastDir = dir;
+      }
+    }
+
     if (y <= 220 || document.body.classList.contains('menu-open')) {
       hidden = false;
-    } else if (dy > 10) {
+      anchorY = y;
+    } else if (lastDir > 0 && y - anchorY > 48) {
       hidden = true;
-    } else if (dy < -8) {
+    } else if (lastDir < 0 && anchorY - y > 28) {
       hidden = false;
     }
     hdr.classList.toggle('is-hidden', hidden);

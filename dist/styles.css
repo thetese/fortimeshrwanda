@@ -36,9 +36,9 @@
 /* ---------- Reset & base ---------- */
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; scroll-padding-top: calc(var(--hdr-h) + 16px); overflow-x: clip; }
+html:has(body.menu-open) { overflow: hidden; }
 body {
   margin: 0;
-  overflow-x: clip;
   background: var(--paper);
   color: var(--text);
   font: 400 1rem/1.65 var(--f-body);
@@ -256,9 +256,9 @@ ul, ol { padding: 0; list-style: none; }
 
 /* Mobile menu */
 .menu {
-  position: fixed; inset: 0; z-index: 55; overflow-y: auto;
-  display: flex; flex-direction: column; justify-content: space-between; gap: 40px;
-  padding: calc(var(--hdr-h) + 24px) var(--gutter) 32px;
+  position: fixed; inset: 0; z-index: 55; overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; justify-content: space-between; gap: 32px;
+  padding: calc(var(--hdr-h) + 20px) var(--gutter) 28px;
   background: var(--ink); color: #fff;
   clip-path: inset(0 0 100% 0);
   visibility: hidden;
