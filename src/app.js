@@ -237,11 +237,11 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   chips.forEach((b) => b.addEventListener('click', () => apply(b.dataset.filter, true)));
 })();
 
-/* ---------- 7. Quote composer ---------- */
+/* ---------- 7. Quote composer (multi-item + BoQ schedule + /api/quote) ---------- */
 (() => {
   const form = document.querySelector('#quote-form');
   if (!form) return;
-  const storageKey = 'fortimesh-quote-draft-v1';
+  const storageKey = 'fortimesh-quote-draft-v2';
   const result = document.querySelector('#quote-result');
   const pre = document.querySelector('#quote-message');
   const copyBtn = document.querySelector('#copy-request');
@@ -250,33 +250,82 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const mailBtn = document.querySelector('#email-request');
   const onlineBtn = document.querySelector('#online-request');
   const status = document.querySelector('#copy-status');
+  const rowsWrap = document.querySelector('#schedule-rows');
+  const addRowBtn = document.querySelector('#add-line-item');
+  const rowTemplate = rowsWrap?.querySelector('[data-sched-row]')?.cloneNode(true);
 
-  // Restore saved draft first, then allow ?product=slug to override product choice
+  const wireRow = (row) => {
+    row.querySelector('[data-remove-row]')?.addEventListener('click', () => {
+      if (rowsWrap.querySelectorAll('[data-sched-row]').length > 1) {
+        row.remove();
+      } else {
+        row.querySelectorAll('input').forEach((inp) => { inp.value = ''; });
+      }
+      updateProgress();
+    });
+  };
+  rowsWrap?.querySelectorAll('[data-sched-row]').forEach(wireRow);
+
+  addRowBtn?.addEventListener('click', () => {
+    if (!rowsWrap || !rowTemplate) return;
+    const clone = rowTemplate.cloneNode(true);
+    clone.querySelectorAll('input').forEach((inp) => { inp.value = ''; });
+    wireRow(clone);
+    rowsWrap.appendChild(clone);
+    clone.querySelector('input[name="item_spec"]')?.focus();
+  });
+
+  // Restore saved draft first, then allow URL parameters (?product=, ?qty=, ?spec=) to override
   try {
     const saved = JSON.parse(localStorage.getItem(storageKey) || '{}');
-    for (const [k, v] of Object.entries(saved)) {
-      if (k.startsWith('_')) continue;
-      const field = form.elements.namedItem(k);
-      if (!field || typeof v !== 'string') continue;
-      if (field instanceof RadioNodeList) {
-        const match = [...field].find((r) => r.value === v);
-        if (match) match.checked = true;
-      } else {
-        field.value = v;
+    if (Array.isArray(saved.products)) {
+      saved.products.forEach((slug) => {
+        const box = form.querySelector(`input[name="product"][value="${CSS.escape(slug)}"]`);
+        if (box) box.checked = true;
+      });
+    }
+    for (const k of ['quantity', 'timeline', 'specification', 'location', 'name', 'contact']) {
+      if (typeof saved[k] === 'string' && form.elements[k]) {
+        form.elements[k].value = saved[k];
       }
     }
   } catch {}
 
-  const paramProduct = new URLSearchParams(location.search).get('product');
+  const params = new URLSearchParams(location.search);
+  const paramProduct = params.get('product');
   if (paramProduct) {
-    const radio = form.querySelector(`input[name="product"][value="${CSS.escape(paramProduct)}"]`);
-    if (radio) radio.checked = true;
+    paramProduct.split(',').forEach((slug) => {
+      const box = form.querySelector(`input[name="product"][value="${CSS.escape(slug.trim())}"]`);
+      if (box) box.checked = true;
+    });
   }
+  if (params.get('qty') && form.elements.quantity) {
+    form.elements.quantity.value = params.get('qty');
+  }
+  if (params.get('spec') && form.elements.specification) {
+    form.elements.specification.value = params.get('spec');
+  }
+
+  // Ensure at least the first product is checked if none selected yet and user came without selection
+  const getCheckedProducts = () => [...form.querySelectorAll('input[name="product"]:checked')];
+
+  const getScheduleItems = () => {
+    if (!rowsWrap) return [];
+    return [...rowsWrap.querySelectorAll('[data-sched-row]')]
+      .map((r) => {
+        const fam = r.querySelector('[name="item_family"]')?.value?.trim() || '';
+        const spec = r.querySelector('[name="item_spec"]')?.value?.trim() || '';
+        const qty = r.querySelector('[name="item_qty"]')?.value?.trim() || '';
+        return spec || qty ? `${fam}: ${qty || 'TBD'} — ${spec || 'standard spec'}` : '';
+      })
+      .filter(Boolean);
+  };
 
   const updateProgress = () => {
     const data = new FormData(form);
+    const hasProduct = getCheckedProducts().length > 0;
     const checks = {
-      material: Boolean(data.get('product') && String(data.get('quantity') || '').trim() && String(data.get('specification') || '').trim()),
+      material: Boolean(hasProduct && String(data.get('quantity') || '').trim() && String(data.get('specification') || '').trim()),
       project: Boolean(String(data.get('location') || '').trim()),
       contact: Boolean(String(data.get('name') || '').trim() && String(data.get('contact') || '').trim()),
     };
@@ -284,8 +333,16 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
       document.querySelector(`[data-progress="${key}"]`)?.classList.toggle('is-done', done);
     }
     try {
-      const clean = Object.fromEntries([...data.entries()].filter(([k]) => !k.startsWith('_')));
-      localStorage.setItem(storageKey, JSON.stringify(clean));
+      const draft = {
+        products: getCheckedProducts().map((c) => c.value),
+        quantity: String(data.get('quantity') || ''),
+        timeline: String(data.get('timeline') || ''),
+        specification: String(data.get('specification') || ''),
+        location: String(data.get('location') || ''),
+        name: String(data.get('name') || ''),
+        contact: String(data.get('contact') || ''),
+      };
+      localStorage.setItem(storageKey, JSON.stringify(draft));
     } catch {}
   };
   updateProgress();
@@ -297,19 +354,28 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
+    const checked = getCheckedProducts();
+    const firstBox = form.querySelector('input[name="product"]');
+    if (firstBox) {
+      firstBox.setCustomValidity(checked.length ? '' : 'Please select at least one product family.');
+    }
     if (!form.reportValidity()) return;
+
     const data = new FormData(form);
-    const checked = form.querySelector('input[name="product"]:checked');
-    const productName = checked?.closest('.pick__item')?.querySelector('.pick__name')?.textContent?.trim() || data.get('product');
+    const productNames = checked
+      .map((c) => c.closest('.pick__item')?.querySelector('.pick__name')?.textContent?.trim() || c.value)
+      .join(', ');
+    const scheduleItems = getScheduleItems();
     const dateStamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const ref = `FM-${dateStamp}-${String(Math.floor(1000 + Math.random() * 9000))}`;
 
     currentPayload = {
-      _subject: `Fortimesh Quote Request [${ref}] — ${productName}`,
+      _subject: `Fortimesh Quote Request [${ref}] — ${productNames}`,
       _template: 'table',
       _captcha: 'false',
       reference: ref,
-      product_family: String(productName),
+      product_family: productNames,
+      schedule_items: scheduleItems.length ? scheduleItems.join(' | ') : 'See specification summary',
       quantity: String(data.get('quantity') || ''),
       specifications: String(data.get('specification') || ''),
       delivery_location: String(data.get('location') || ''),
@@ -318,18 +384,26 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
       reply_contact: String(data.get('contact') || ''),
     };
 
-    message = [
+    const lines = [
       `FORTIMESH MATERIAL REQUEST (${ref})`,
       '',
-      `Product family: ${currentPayload.product_family}`,
-      `Quantity: ${currentPayload.quantity}`,
+      `Product families: ${currentPayload.product_family}`,
+      `Total quantity: ${currentPayload.quantity}`,
       `Specifications: ${currentPayload.specifications}`,
+    ];
+    if (scheduleItems.length) {
+      lines.push('', 'Itemised schedule:');
+      scheduleItems.forEach((item, idx) => lines.push(`  ${idx + 1}. ${item}`));
+      lines.push('');
+    }
+    lines.push(
       `Delivery / collection: ${currentPayload.delivery_location}`,
       `Timeline: ${currentPayload.timeline}`,
       '',
       `From: ${currentPayload.client_name}`,
       `Reply contact: ${currentPayload.reply_contact}`,
-    ].join('\n');
+    );
+    message = lines.join('\n');
 
     pre.textContent = message;
     status.textContent = '';
@@ -351,20 +425,33 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   });
 
   onlineBtn?.addEventListener('click', async () => {
-    if (!currentPayload || !onlineBtn.dataset.endpoint) return;
+    if (!currentPayload) return;
     const label = onlineBtn.querySelector('span:first-child');
     onlineBtn.disabled = true;
     if (label) label.textContent = 'Sending…';
     status.textContent = 'Submitting your request to Fortimesh sales desk…';
     try {
-      const res = await fetch(onlineBtn.dataset.endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify(currentPayload),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const apiUrl = onlineBtn.dataset.api || '/api/quote';
+      let ok = false;
+      try {
+        const apiRes = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify(currentPayload),
+        });
+        ok = apiRes.ok;
+      } catch {}
+      if (!ok && onlineBtn.dataset.endpoint) {
+        const fallbackRes = await fetch(onlineBtn.dataset.endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify(currentPayload),
+        });
+        ok = fallbackRes.ok;
+      }
+      if (!ok) throw new Error('Delivery failed');
       if (label) label.textContent = 'Submitted';
-      status.textContent = `Request ${currentPayload.reference} delivered to our sales inbox. For urgent dispatch, also click Send on WhatsApp.`;
+      status.textContent = `Request ${currentPayload.reference} logged with our Kigali sales desk. For immediate dispatch confirmation, also click Send on WhatsApp.`;
     } catch {
       onlineBtn.disabled = false;
       if (label) label.textContent = 'Submit online';
@@ -390,4 +477,81 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
       status.textContent = 'Sharing is not supported in this browser — use Copy text instead.';
     }
   });
+})();
+
+/* ---------- 8. Rebar & Gabion Calculators + Print/PDF trigger ---------- */
+(() => {
+  document.querySelectorAll('[data-print]').forEach((btn) => {
+    btn.addEventListener('click', () => window.print());
+  });
+
+  const rebarCalc = document.querySelector('[data-calc="rebar"]');
+  if (rebarCalc) {
+    const diaEl = rebarCalc.querySelector('[data-rebar-dia]');
+    const lenEl = rebarCalc.querySelector('[data-rebar-len]');
+    const qtyEl = rebarCalc.querySelector('[data-rebar-qty]');
+    const unitOut = rebarCalc.querySelector('[data-rebar-unit]');
+    const kgOut = rebarCalc.querySelector('[data-rebar-kg]');
+    const tOut = rebarCalc.querySelector('[data-rebar-tonnes]');
+    const wireOut = rebarCalc.querySelector('[data-rebar-wire]');
+    const quoteLink = rebarCalc.querySelector('[data-rebar-quote]');
+
+    const updateRebar = () => {
+      const d = Number(diaEl?.value) || 12;
+      const len = Number(lenEl?.value) || 12;
+      const qty = Math.max(1, Number(qtyEl?.value) || 1);
+      const unitKg = ((d * d) / 162.2) * len;
+      const totalKg = unitKg * qty;
+      const tonnes = totalKg / 1000;
+      const wireKg = Math.max(1, Math.round(totalKg * 0.012));
+
+      if (unitOut) unitOut.textContent = `${unitKg.toFixed(2)} kg`;
+      if (kgOut) kgOut.textContent = `${Math.round(totalKg).toLocaleString('en-US')} kg`;
+      if (tOut) tOut.textContent = `${tonnes.toFixed(2)} t`;
+      if (wireOut) wireOut.textContent = `${wireKg.toLocaleString('en-US')} kg`;
+      if (quoteLink) {
+        const q = `${qty} bars (${tonnes.toFixed(2)} t)`;
+        const s = `D${d} deformed steel reinforcement bars (${len}m length) — ${qty} bars (~${Math.round(totalKg).toLocaleString('en-US')} kg) + ~${wireKg} kg annealed binding wire`;
+        quoteLink.href = `/quote/?product=reinforcement-steel&qty=${encodeURIComponent(q)}&spec=${encodeURIComponent(s)}`;
+      }
+    };
+    rebarCalc.addEventListener('input', updateRebar);
+    rebarCalc.addEventListener('change', updateRebar);
+    updateRebar();
+  }
+
+  const gabionCalc = document.querySelector('[data-calc="gabion"]');
+  if (gabionCalc) {
+    const lEl = gabionCalc.querySelector('[data-gab-l]');
+    const hEl = gabionCalc.querySelector('[data-gab-h]');
+    const wEl = gabionCalc.querySelector('[data-gab-w]');
+    const boxEl = gabionCalc.querySelector('[data-gab-box]');
+    const volOut = gabionCalc.querySelector('[data-gab-vol]');
+    const boxesOut = gabionCalc.querySelector('[data-gab-boxes]');
+    const stoneOut = gabionCalc.querySelector('[data-gab-stone]');
+    const quoteLink = gabionCalc.querySelector('[data-gab-quote]');
+
+    const updateGabion = () => {
+      const l = Math.max(0.5, Number(lEl?.value) || 1);
+      const h = Math.max(0.5, Number(hEl?.value) || 1);
+      const w = Math.max(0.5, Number(wEl?.value) || 1);
+      const boxVol = Number(boxEl?.value) || 2;
+      const boxLabel = boxEl?.selectedOptions?.[0]?.dataset?.label || '2m × 1m × 1m';
+      const vol = l * h * w;
+      const boxes = Math.ceil(vol / boxVol);
+      const stone = vol * 1.15;
+
+      if (volOut) volOut.textContent = `${vol.toFixed(1)} m³`;
+      if (boxesOut) boxesOut.textContent = `${boxes.toLocaleString('en-US')} ${boxes === 1 ? 'box' : 'boxes'}`;
+      if (stoneOut) stoneOut.textContent = `${stone.toFixed(1)} m³`;
+      if (quoteLink) {
+        const q = `${boxes} gabion boxes (${vol.toFixed(1)} m³)`;
+        const s = `${boxLabel} double-twisted woven gabion baskets for ${l}m × ${h}m × ${w}m retaining structure (${boxes} boxes, est. ${stone.toFixed(1)} m³ stone fill)`;
+        quoteLink.href = `/quote/?product=gabion-mesh&qty=${encodeURIComponent(q)}&spec=${encodeURIComponent(s)}`;
+      }
+    };
+    gabionCalc.addEventListener('input', updateGabion);
+    gabionCalc.addEventListener('change', updateGabion);
+    updateGabion();
+  }
 })();

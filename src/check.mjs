@@ -52,4 +52,23 @@ for (const required of ['sitemap.xml', 'robots.txt', 'favicon.ico', 'styles.css'
   if (!fs.existsSync(path.join(dist, required))) throw new Error(`Missing dist/${required}`);
 }
 
-console.log(`Checked ${pages.length} HTML files, metadata, local links, and responsive image assets.`);
+const rebarHtml = fs.readFileSync(path.join(dist, 'products', 'reinforcement-steel', 'index.html'), 'utf8');
+if (!rebarHtml.includes('data-calc="rebar"')) throw new Error('Missing rebar calculator on reinforcement-steel page');
+
+const gabionHtml = fs.readFileSync(path.join(dist, 'products', 'gabion-mesh', 'index.html'), 'utf8');
+if (!gabionHtml.includes('data-calc="gabion"')) throw new Error('Missing gabion calculator on gabion-mesh page');
+
+const quoteHtml = fs.readFileSync(path.join(dist, 'quote', 'index.html'), 'utf8');
+if (!quoteHtml.includes('id="schedule-rows"') || !quoteHtml.includes('"FAQPage"')) {
+  throw new Error('Missing schedule builder or FAQPage schema on quote page');
+}
+
+const contactHtml = fs.readFileSync(path.join(dist, 'contact', 'index.html'), 'utf8');
+if (!contactHtml.includes('map-card__frame') || !contactHtml.includes('"FAQPage"')) {
+  throw new Error('Missing embedded map or FAQPage schema on contact page');
+}
+
+const apiQuote = path.resolve(import.meta.dirname, '../api/quote.js');
+if (!fs.existsSync(apiQuote)) throw new Error('Missing Vercel serverless endpoint api/quote.js');
+
+console.log(`Checked ${pages.length} HTML files, calculators, schedule builder, FAQ schema, map, and assets.`);
