@@ -305,7 +305,7 @@ const header = (active) => `
     </nav>
     <div class="hdr__actions">
       ${site.contact.phone ? `<a class="hdr__phone" href="tel:${site.contact.phone.replace(/[^+\d]/g, '')}" aria-label="Call ${esc(site.contact.phone)}">${icon('phone')}<span>${esc(site.contact.phone)}</span></a>` : ''}
-      ${btn('/quote/', 'Request a quote', 'primary', 'up', { cls: 'btn--sm hdr__cta' })}
+      ${active === 'quote' ? btn('/products/', 'Browse products', 'primary', 'arrow', { cls: 'btn--sm hdr__cta' }) : btn('/quote/', 'Request a quote', 'primary', 'up', { cls: 'btn--sm hdr__cta' })}
       <button class="hdr__toggle" type="button" aria-expanded="false" aria-controls="menu" aria-label="Open menu"><span></span><span></span></button>
     </div>
   </div>
@@ -511,7 +511,6 @@ const cta = `
     <p data-reveal style="--i:2">Send your quantities, dimensions and delivery site to our Kimironko, Kigali sales desk—online, on WhatsApp or by phone.</p>
     <div class="cta__actions" data-reveal style="--i:3">
       ${btn('/quote/', 'Request a quote', 'light')}
-      ${btn(`https://wa.me/${site.contact.whatsapp}`, 'Chat on WhatsApp', 'ghost', 'chat', { attrs: ' target="_blank" rel="noopener noreferrer"' })}
       ${btn('/products/', 'Browse products', 'ghost', 'arrow')}
     </div>
   </div>
@@ -667,7 +666,6 @@ const home = `
       <p class="hero__lead" data-reveal style="--i:6">We supply structural and reinforcement steel, heavy-duty gabion mesh, fencing wire, plumbing, electrical and essential building materials to contractors, engineers and developers across Rwanda.</p>
       <div class="hero__ctas" data-reveal style="--i:7">
         ${btn('/products/', 'Explore our products', 'primary')}
-        ${btn('/quote/', 'Request a quote', 'ghost', 'arrow')}
       </div>
     </div>
   </div>
@@ -819,9 +817,9 @@ function productPage(p, i) {
       ${p.localTerms ? `<p class="pd-hero__local" data-reveal style="--i:2"><span>FR / RW trade terms:</span> ${esc(p.localTerms)}</p>` : ''}
       <p class="pd-hero__lead" data-reveal style="--i:3">${p.summary}</p>
       <div class="pd-hero__actions" data-reveal style="--i:4">
-        ${btn(`/quote/?product=${p.slug}`, 'Request a quote', 'primary')}
-        ${btn(waHref, 'WhatsApp inquiry', 'ghost', 'chat', { attrs: ' target="_blank" rel="noopener noreferrer"' })}
+        ${btn(`/quote/?product=${p.slug}`, 'Quote this product', 'primary')}
         <button class="btn btn--ghost btn--sm" type="button" data-print><span>Print spec sheet</span><span class="btn__icon">${icon('print')}${icon('print')}</span></button>
+        <a class="link link--light" href="/products/">All products ${icon('arrow')}</a>
       </div>
       <ul class="pd-hero__tags" data-reveal style="--i:5" aria-label="Common applications">${p.uses.map((u) => `<li>${u}</li>`).join('')}</ul>
     </div>
@@ -851,7 +849,6 @@ function productPage(p, i) {
         <h2 class="h3">What to include</h2>
         <ul class="checks">${p.request.map((r) => `<li>${icon('check')}<span>${r}</span></li>`).join('')}</ul>
         ${btn(`/quote/?product=${p.slug}`, `Prepare a quote`, 'primary', 'up', { cls: 'btn--block' })}
-        ${btn(waHref, `Ask on WhatsApp`, 'ghost', 'chat', { cls: 'btn--block', attrs: ' target="_blank" rel="noopener noreferrer"' })}
         <small>Direct sales desk: ${esc(site.contact.phone)} · ${esc(site.locality)}</small>
       </aside>
     </div>
@@ -994,7 +991,6 @@ ${pageHero({ label: 'Contact', title: 'Start the *conversation.*', image: 'ai-he
         <li>${icon('check')}<span>Site delivery location and target schedule</span></li>
       </ul>
       ${btn('/quote/', 'Open quote composer', 'primary', 'up', { cls: 'btn--block' })}
-      ${btn(`https://wa.me/${site.contact.whatsapp}`, 'Message on WhatsApp', 'ghost', 'chat', { cls: 'btn--block', attrs: ' target="_blank" rel="noopener noreferrer"' })}
       <small>We respond promptly to contractor and project inquiries across Rwanda.</small>
     </aside>
   </div>
