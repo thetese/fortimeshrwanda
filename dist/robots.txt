@@ -1,3 +1,0 @@
-User-agent: *
-Allow: /
-Sitemap: https://fortimeshrwanda.vercel.app/sitemap.xml
