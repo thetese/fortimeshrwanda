@@ -4,7 +4,7 @@ import { buildMetadata, quoteHtml } from '../../lib/site-data';
 export const metadata = buildMetadata({
   title: 'Request a Material Quote & BoQ Schedule',
   description:
-    'Prepare an itemised material schedule or BoQ request for gabion mesh, rebar, structural steel, plumbing and electrical supplies from FORTIMESH AND STEELS RWANDA LTD in Kigali.',
+    'Prepare an itemised material schedule or BoQ request for structural steel, hollow sections, steel plates, rebar, chain-link fencing, galvanised pipes and waterproofing from FORTIMESH AND STEELS RWANDA LTD in Kigali.',
   pathName: '/quote/',
   image: 'wire',
 });

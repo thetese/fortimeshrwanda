@@ -471,15 +471,18 @@ export default function ClientInteractions() {
           try {
             const apiUrl = onlineBtn.dataset.api || '/api/quote';
             let ok = false;
+            let apiError = '';
             try {
               const apiRes = await fetch(apiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
                 body: JSON.stringify(currentPayload),
               });
-              ok = apiRes.ok;
+              const apiJson = await apiRes.json().catch(() => ({}));
+              ok = apiRes.ok && apiJson.ok !== false;
+              if (!ok && apiJson.error) apiError = apiJson.error;
             } catch {}
-            if (!ok && onlineBtn.dataset.endpoint) {
+            if (!ok && !apiError && onlineBtn.dataset.endpoint) {
               const fallbackRes = await fetch(onlineBtn.dataset.endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -487,14 +490,15 @@ export default function ClientInteractions() {
               });
               ok = fallbackRes.ok;
             }
-            if (!ok) throw new Error('Delivery failed');
+            if (!ok) throw new Error(apiError || 'Delivery failed');
             if (label) label.textContent = 'Submitted';
-            status.textContent = `Request ${currentPayload.reference} logged with our Kigali sales desk. For immediate dispatch confirmation, also click Send on WhatsApp.`;
-          } catch {
+            status.textContent = `Request ${currentPayload.reference} delivered to our Kigali sales desk. For immediate dispatch confirmation, also click Send on WhatsApp.`;
+          } catch (err) {
             onlineBtn.disabled = false;
             if (label) label.textContent = 'Submit online';
-            status.textContent =
-              'Direct online delivery could not be completed—please click "Send on WhatsApp" or "Open in email app" above.';
+            status.textContent = err?.message && err.message !== 'Delivery failed'
+              ? `Delivery error: ${err.message} — please click "Send on WhatsApp" or "Open in email app" above.`
+              : 'Direct online delivery could not be completed—please click "Send on WhatsApp" or "Open in email app" above.';
           }
         },
         { signal },
@@ -528,7 +532,7 @@ export default function ClientInteractions() {
       );
     })();
 
-    /* ---------- 8. Rebar & Gabion Calculators + Print/PDF trigger ---------- */
+    /* ---------- 8. Rebar & Structural Steel Calculators + Print/PDF trigger ---------- */
     (() => {
       document.querySelectorAll('[data-print]').forEach((btn) => {
         btn.addEventListener('click', () => window.print(), { signal });
@@ -546,10 +550,13 @@ export default function ClientInteractions() {
         const quoteLink = rebarCalc.querySelector('[data-rebar-quote]');
 
         const updateRebar = () => {
-          const d = Number(diaEl?.value) || 12;
+          const rawVal = diaEl?.value || '12';
+          const isCage = rawVal.startsWith('cage:');
           const len = Number(lenEl?.value) || 12;
           const qty = Math.max(1, Number(qtyEl?.value) || 1);
-          const unitKg = ((d * d) / 162.2) * len;
+          const d = Number(rawVal) || 12;
+          const kgPerM = isCage ? Number(rawVal.split(':')[1]) || 7.65 : (d * d) / 162.2;
+          const unitKg = kgPerM * len;
           const totalKg = unitKg * qty;
           const tonnes = totalKg / 1000;
           const wireKg = Math.max(1, Math.round(totalKg * 0.012));
@@ -559,8 +566,10 @@ export default function ClientInteractions() {
           if (tOut) tOut.textContent = `${tonnes.toFixed(2)} t`;
           if (wireOut) wireOut.textContent = `${wireKg.toLocaleString('en-US')} kg`;
           if (quoteLink) {
-            const q = `${qty} bars (${tonnes.toFixed(2)} t)`;
-            const s = `D${d} deformed steel reinforcement bars (${len}m length) — ${qty} bars (~${Math.round(totalKg).toLocaleString('en-US')} kg) + ~${wireKg} kg annealed binding wire`;
+            const unitName = isCage ? 'column cages' : 'bars';
+            const label = diaEl?.selectedOptions?.[0]?.dataset?.label || `D${d} deformed steel reinforcement bars`;
+            const q = `${qty} ${unitName} (${tonnes.toFixed(2)} t)`;
+            const s = `${label} (${len}m length) — ${qty} ${unitName} (~${Math.round(totalKg).toLocaleString('en-US')} kg) + ~${wireKg} kg annealed binding wire`;
             quoteLink.href = `/quote/?product=reinforcement-steel&qty=${encodeURIComponent(q)}&spec=${encodeURIComponent(s)}`;
           }
         };
@@ -569,39 +578,71 @@ export default function ClientInteractions() {
         updateRebar();
       }
 
-      const gabionCalc = document.querySelector('[data-calc="gabion"]');
-      if (gabionCalc) {
-        const lEl = gabionCalc.querySelector('[data-gab-l]');
-        const hEl = gabionCalc.querySelector('[data-gab-h]');
-        const wEl = gabionCalc.querySelector('[data-gab-w]');
-        const boxEl = gabionCalc.querySelector('[data-gab-box]');
-        const volOut = gabionCalc.querySelector('[data-gab-vol]');
-        const boxesOut = gabionCalc.querySelector('[data-gab-boxes]');
-        const stoneOut = gabionCalc.querySelector('[data-gab-stone]');
-        const quoteLink = gabionCalc.querySelector('[data-gab-quote]');
+      const steelCalc = document.querySelector('[data-calc="steel"]');
+      if (steelCalc) {
+        const profileEl = steelCalc.querySelector('[data-steel-profile]');
+        const thickEl = steelCalc.querySelector('[data-steel-thick]');
+        const lenEl = steelCalc.querySelector('[data-steel-len]');
+        const qtyEl = steelCalc.querySelector('[data-steel-qty]');
+        const kgmOut = steelCalc.querySelector('[data-steel-kgm]');
+        const unitOut = steelCalc.querySelector('[data-steel-unit]');
+        const kgOut = steelCalc.querySelector('[data-steel-kg]');
+        const tOut = steelCalc.querySelector('[data-steel-tonnes]');
+        const quoteLink = steelCalc.querySelector('[data-steel-quote]');
 
-        const updateGabion = () => {
-          const l = Math.max(0.5, Number(lEl?.value) || 1);
-          const h = Math.max(0.5, Number(hEl?.value) || 1);
-          const w = Math.max(0.5, Number(wEl?.value) || 1);
-          const boxVol = Number(boxEl?.value) || 2;
-          const boxLabel = boxEl?.selectedOptions?.[0]?.dataset?.label || '2m × 1m × 1m';
-          const vol = l * h * w;
-          const boxes = Math.ceil(vol / boxVol);
-          const stone = vol * 1.15;
+        const updateSteel = () => {
+          const raw = profileEl?.value || 'shs:50:50';
+          const parts = raw.split(':');
+          const kind = parts[0];
+          const tRaw = Number(thickEl?.value) || 3.0;
+          const len = Number(lenEl?.value) || 6;
+          const qty = Math.max(1, Number(qtyEl?.value) || 1);
 
-          if (volOut) volOut.textContent = `${vol.toFixed(1)} m³`;
-          if (boxesOut) boxesOut.textContent = `${boxes.toLocaleString('en-US')} ${boxes === 1 ? 'box' : 'boxes'}`;
-          if (stoneOut) stoneOut.textContent = `${stone.toFixed(1)} m³`;
+          let areaMm2 = 0;
+          let isFixedProfile = false;
+          if (kind === 'shs' || kind === 'rhs') {
+            const b = Number(parts[1]) || 50;
+            const h = Number(parts[2]) || b;
+            const t = Math.min(tRaw, Math.min(b, h) / 2.2);
+            areaMm2 = 2 * t * (b + h - 2 * t);
+          } else if (kind === 'chs') {
+            const d = Number(parts[1]) || 60.3;
+            const t = Math.min(tRaw, d / 2.2);
+            areaMm2 = Math.PI * t * (d - t);
+          } else if (kind === 'fixed') {
+            isFixedProfile = true;
+            areaMm2 = (Number(parts[1]) || 20.4) / 0.00785;
+          } else {
+            isFixedProfile = true;
+            areaMm2 = (Number(raw) || 4.43) / 0.00785;
+          }
+
+          if (thickEl) {
+            thickEl.disabled = isFixedProfile;
+          }
+
+          const kgPerM = areaMm2 * 0.00785;
+          const profileLabel = profileEl?.selectedOptions?.[0]?.dataset?.label || 'SHS 50×50 mm';
+          const unitKg = kgPerM * len;
+          const totalKg = unitKg * qty;
+          const tonnes = totalKg / 1000;
+
+          if (kgmOut) kgmOut.textContent = `${kgPerM.toFixed(2)} kg/m`;
+          if (unitOut) unitOut.textContent = `${unitKg.toFixed(1)} kg`;
+          if (kgOut) kgOut.textContent = `${Math.round(totalKg).toLocaleString('en-US')} kg`;
+          if (tOut) tOut.textContent = `${tonnes.toFixed(2)} t`;
           if (quoteLink) {
-            const q = `${boxes} gabion boxes (${vol.toFixed(1)} m³)`;
-            const s = `${boxLabel} double-twisted woven gabion baskets for ${l}m × ${h}m × ${w}m retaining structure (${boxes} boxes, est. ${stone.toFixed(1)} m³ stone fill)`;
-            quoteLink.href = `/quote/?product=gabion-mesh&qty=${encodeURIComponent(q)}&spec=${encodeURIComponent(s)}`;
+            const q = `${qty} bars (${tonnes.toFixed(2)} t)`;
+            const s = isFixedProfile
+              ? `${profileLabel} (${len}m length) — ${qty} bars (~${Math.round(totalKg).toLocaleString('en-US')} kg)`
+              : `${profileLabel} × ${tRaw.toFixed(1)} mm wall hollow sections (${len}m length) — ${qty} bars (~${Math.round(totalKg).toLocaleString('en-US')} kg)`;
+            const prodSlug = isFixedProfile ? 'structural-steel' : 'hollow-sections';
+            quoteLink.href = `/quote/?product=${prodSlug}&qty=${encodeURIComponent(q)}&spec=${encodeURIComponent(s)}`;
           }
         };
-        gabionCalc.addEventListener('input', updateGabion, { signal });
-        gabionCalc.addEventListener('change', updateGabion, { signal });
-        updateGabion();
+        steelCalc.addEventListener('input', updateSteel, { signal });
+        steelCalc.addEventListener('change', updateSteel, { signal });
+        updateSteel();
       }
     })();
 

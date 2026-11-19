@@ -4,7 +4,7 @@ import { buildMetadata, catalogHtml } from '../../lib/site-data';
 export const metadata = buildMetadata({
   title: 'Products & Steel Supply Catalogue',
   description:
-    'Browse the FORTIMESH AND STEELS RWANDA LTD product catalogue: gabion mesh, steel wire, deformed reinforcement steel, structural steel, plumbing, electrical and construction essentials in Kigali.',
+    'Browse the FORTIMESH AND STEELS RWANDA LTD product catalogue: structural steel beams & channels, hollow sections, steel plates, deformed reinforcement steel, chain-link wire mesh, galvanised pipes and construction essentials in Kigali.',
   pathName: '/products/',
   image: 'steel-yard',
 });

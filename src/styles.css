@@ -4,22 +4,22 @@
    ========================================================================= */
 
 :root {
-  --ink: #0a1416;
-  --ink-2: #102023;
-  --ink-3: #182d31;
+  --ink: #091713;
+  --ink-2: #0f241e;
+  --ink-3: #16332b;
   --slate: #3b4450;
-  --text: #1a2629;
-  --muted: #5c686c;
-  --muted-2: #8b979a;
-  --paper: #f3f5f4;
-  --paper-2: #e8edec;
+  --text: #162620;
+  --muted: #566861;
+  --muted-2: #859790;
+  --paper: #f3f6f4;
+  --paper-2: #e6ede9;
   --white: #ffffff;
-  --line: #d9e0df;
+  --line: #d6e0da;
   --line-dark: rgba(255, 255, 255, .12);
-  --teal: #13808a;
-  --teal-d: #0d636c;
-  --teal-l: #46c3cd;
-  --teal-50: #e2f1f2;
+  --teal: #185a45;
+  --teal-d: #114232;
+  --teal-l: #6fa866;
+  --teal-50: #e4efe8;
 
   --f-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
   --f-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -392,7 +392,7 @@ ul, ol { padding: 0; list-style: none; }
 }
 .tile::before {
   content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: 0;
-  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgba(70, 195, 205, .22), transparent 60%);
+  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgba(111, 168, 102, .24), transparent 60%);
   transition: opacity .5s;
 }
 .tile:hover::before { opacity: 1; }
@@ -488,7 +488,7 @@ ul, ol { padding: 0; list-style: none; }
 .step p { color: var(--muted); max-width: 34ch; }
 .section--dark .steps::before { background: var(--line-dark); }
 .section--dark .step::before { background: var(--ink); }
-.section--dark .steps.is-in .step::before { background: var(--teal-l); border-color: var(--teal-l); box-shadow: 0 0 0 6px rgba(70, 195, 205, .15); }
+.section--dark .steps.is-in .step::before { background: var(--teal-l); border-color: var(--teal-l); box-shadow: 0 0 0 6px rgba(111, 168, 102, .16); }
 .section--dark .step h3 { color: #fff; }
 .section--dark .step p { color: rgba(255, 255, 255, .65); }
 .section--dark .step__n { color: var(--teal-l); }
@@ -497,7 +497,7 @@ ul, ol { padding: 0; list-style: none; }
 .cta { position: relative; isolation: isolate; overflow: hidden; background: var(--ink); color: #fff; padding-block: clamp(110px, 13vw, 200px); }
 .cta__media { position: absolute; inset: 0; z-index: -2; }
 .cta__media img { filter: brightness(.55) saturate(.6); }
-.cta::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(100deg, rgba(10, 70, 76, .92) 0%, rgba(10, 40, 44, .75) 45%, rgba(7, 15, 17, .55) 100%); }
+.cta::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(100deg, rgba(19, 66, 50, .92) 0%, rgba(15, 45, 36, .78) 45%, rgba(9, 23, 19, .58) 100%); }
 .cta__inner { position: relative; z-index: 2; display: grid; gap: 28px; justify-items: start; }
 .cta__inner .display-2 { max-width: 13ch; }
 .cta__inner p { max-width: 520px; color: rgba(255, 255, 255, .78); font-size: 1.1rem; }
@@ -529,7 +529,7 @@ ul, ol { padding: 0; list-style: none; }
   text-align: center; white-space: nowrap; pointer-events: none; user-select: none;
   font: 800 clamp(3.2rem, 16.5vw, 15.5rem)/1 var(--f-display); font-stretch: 75%; letter-spacing: -.03em;
   color: transparent; -webkit-text-stroke: 1px rgba(255, 255, 255, .12);
-  background: linear-gradient(180deg, rgba(70, 195, 205, .22) 0%, rgba(70, 195, 205, .06) 100%); -webkit-background-clip: text; background-clip: text;
+  background: linear-gradient(180deg, rgba(111, 168, 102, .22) 0%, rgba(111, 168, 102, .06) 100%); -webkit-background-clip: text; background-clip: text;
 }
 
 /* =========================================================================
@@ -624,7 +624,7 @@ ul, ol { padding: 0; list-style: none; }
 .panel__direct a:hover { color: var(--teal-l); }
 .checks { display: grid; gap: 14px; }
 .checks li { display: grid; grid-template-columns: 26px 1fr; gap: 12px; align-items: start; }
-.checks svg { width: 22px; height: 22px; padding: 4px; border-radius: 50%; background: rgba(70, 195, 205, .16); color: var(--teal-l); margin-top: 1px; }
+.checks svg { width: 22px; height: 22px; padding: 4px; border-radius: 50%; background: rgba(111, 168, 102, .16); color: var(--teal-l); margin-top: 1px; }
 .on-light .checks svg { background: var(--teal-50); color: var(--teal); }
 
 .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-top: clamp(64px, 8vw, 112px); }
@@ -861,8 +861,8 @@ html.vt-filter::view-transition-old(root), html.vt-filter::view-transition-new(r
   flex-wrap: wrap;
   gap: 8px;
   padding: 6px 12px;
-  background: rgba(70, 195, 205, .1);
-  border: 1px solid rgba(70, 195, 205, .24);
+  background: rgba(111, 168, 102, .12);
+  border: 1px solid rgba(111, 168, 102, .26);
   font-size: .78rem;
   color: var(--teal-l);
 }
@@ -907,7 +907,7 @@ html.vt-filter::view-transition-old(root), html.vt-filter::view-transition-new(r
   margin-top: 16px;
 }
 
-/* Interactive Rebar & Gabion Calculators */
+/* ---------- Interactive Rebar & Structural Steel Calculators ---------- */
 .tile__terms {
   display: block;
   margin-top: 6px;
@@ -1184,7 +1184,7 @@ html.vt-filter::view-transition-old(root), html.vt-filter::view-transition-new(r
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   color: var(--white);
-  border: 1px solid rgba(70, 195, 205, .28);
+  border: 1px solid rgba(111, 168, 102, .28);
   box-shadow: 0 14px 34px -6px rgba(7, 15, 17, .55), 0 0 0 1px rgba(255, 255, 255, .04) inset;
   transition: background-color .3s var(--ease), border-color .3s var(--ease), transform .3s var(--ease), box-shadow .3s var(--ease);
 }
@@ -1245,8 +1245,8 @@ html.vt-filter::view-transition-old(root), html.vt-filter::view-transition-new(r
 .wa-float:hover,
 .wa-float:focus-visible {
   transform: translateY(-3px);
-  border-color: rgba(70, 195, 205, .6);
-  background: rgba(16, 32, 35, .96);
+  border-color: rgba(111, 168, 102, .6);
+  background: rgba(15, 36, 30, .96);
   box-shadow: 0 20px 42px -8px rgba(7, 15, 17, .65), 0 0 24px -4px rgba(37, 211, 102, .25);
 }
 .wa-float:hover .wa-float__icon,

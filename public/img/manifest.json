@@ -1,62 +1,114 @@
 {
-  "gabion-hills": {
-    "width": 1264,
-    "height": 848,
-    "widths": [640, 1264]
-  },
   "hero-kigali": {
-    "width": 1376,
-    "height": 768,
-    "widths": [640, 1280, 1376]
+    "width": 810,
+    "height": 1080,
+    "widths": [
+      640,
+      810
+    ]
   },
   "steel-yard": {
-    "width": 1264,
-    "height": 848,
-    "widths": [640, 1264]
+    "width": 750,
+    "height": 750,
+    "widths": [
+      640,
+      750
+    ]
   },
   "beam": {
-    "width": 1100,
-    "height": 1375,
-    "widths": [640, 1100]
+    "width": 1080,
+    "height": 810,
+    "widths": [
+      640,
+      1080
+    ]
   },
-  "blocks": {
-    "width": 1100,
-    "height": 1540,
-    "widths": [640, 1100]
+  "angle": {
+    "width": 810,
+    "height": 1080,
+    "widths": [
+      640,
+      810
+    ]
   },
-  "electric": {
-    "width": 1100,
-    "height": 733,
-    "widths": [640, 1100]
+  "plates": {
+    "width": 1440,
+    "height": 446,
+    "widths": [
+      640,
+      1440
+    ]
   },
   "feature": {
-    "width": 1100,
-    "height": 1643,
-    "widths": [640, 1100]
-  },
-  "gabion": {
-    "width": 1100,
-    "height": 618,
-    "widths": [640, 1100]
-  },
-  "hero-site": {
-    "width": 1200,
-    "height": 803,
-    "widths": [640, 1200]
-  },
-  "pipe": {
-    "width": 1100,
-    "height": 1654,
-    "widths": [640, 1100]
+    "width": 810,
+    "height": 1080,
+    "widths": [
+      640,
+      810
+    ]
   },
   "rebar": {
-    "width": 1100,
-    "height": 1375,
-    "widths": [640, 1100]
+    "width": 810,
+    "height": 1080,
+    "widths": [
+      640,
+      810
+    ]
   },
   "wire": {
-    "width": 1100,
-    "height": 733,
-    "widths": [640, 1100]
+    "width": 1254,
+    "height": 787,
+    "widths": [
+      640,
+      1254
+    ]
+  },
+  "hero-site": {
+    "width": 1080,
+    "height": 1080,
+    "widths": [
+      640,
+      1080
+    ]
+  },
+  "green-mesh": {
+    "width": 1024,
+    "height": 642,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "pipe": {
+    "width": 1296,
+    "height": 878,
+    "widths": [
+      640,
+      1296
+    ]
+  },
+  "gi-pipe": {
+    "width": 1024,
+    "height": 564,
+    "widths": [
+      640,
+      1024
+    ]
+  },
+  "lathing": {
+    "width": 1365,
+    "height": 1310,
+    "widths": [
+      640,
+      1365
+    ]
+  },
+  "blocks": {
+    "width": 1024,
+    "height": 603,
+    "widths": [
+      640,
+      1024
+    ]
   }
 }

@@ -40,15 +40,15 @@ for (const file of htmlFiles) {
 }
 
 const homeHtml = fs.readFileSync(path.join(nextApp, 'index.html'), 'utf8');
-if (!homeHtml.includes('data-calc="rebar"') || !homeHtml.includes('data-calc="gabion"') || !homeHtml.includes('"FAQPage"')) {
+if (!homeHtml.includes('data-calc="rebar"') || !homeHtml.includes('data-calc="steel"') || !homeHtml.includes('"FAQPage"')) {
   throw new Error('Missing calculators or FAQPage schema on Home page');
 }
 
 const rebarHtml = fs.readFileSync(path.join(nextApp, 'products', 'reinforcement-steel.html'), 'utf8');
 if (!rebarHtml.includes('data-calc="rebar"')) throw new Error('Missing rebar calculator on reinforcement-steel page');
 
-const gabionHtml = fs.readFileSync(path.join(nextApp, 'products', 'gabion-mesh.html'), 'utf8');
-if (!gabionHtml.includes('data-calc="gabion"')) throw new Error('Missing gabion calculator on gabion-mesh page');
+const steelHtml = fs.readFileSync(path.join(nextApp, 'products', 'structural-steel.html'), 'utf8');
+if (!steelHtml.includes('data-calc="steel"')) throw new Error('Missing steel calculator on structural-steel page');
 
 const quoteHtml = fs.readFileSync(path.join(nextApp, 'quote.html'), 'utf8');
 if (!quoteHtml.includes('id="schedule-rows"') || !quoteHtml.includes('"FAQPage"')) {

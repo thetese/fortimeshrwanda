@@ -2,9 +2,9 @@ import PageShell from '../../components/PageShell';
 import { buildMetadata, applicationsHtml } from '../../lib/site-data';
 
 export const metadata = buildMetadata({
-  title: 'Construction & Civil Engineering Applications',
+  title: 'Construction & Structural Steel Applications',
   description:
-    'See how FORTIMESH AND STEELS RWANDA LTD supplies hillside gabion retaining walls, reinforced concrete structures, MEP installations and waterproofing across Rwanda.',
+    'See how FORTIMESH AND STEELS RWANDA LTD supplies structural steel frames, hollow sections, reinforced concrete structures, perimeter fencing, piping and waterproofing across Rwanda.',
   pathName: '/applications/',
   image: 'hero-site',
 });

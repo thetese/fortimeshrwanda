@@ -2,9 +2,9 @@ import PageShell from '../components/PageShell';
 import { buildMetadata, homeHtml } from '../lib/site-data';
 
 export const metadata = buildMetadata({
-  title: 'Steel, Gabion Mesh & Construction Materials in Kigali, Rwanda',
+  title: 'Structural Steel, Rebar, Wire Mesh & Construction Materials in Kigali, Rwanda',
   description:
-    'FORTIMESH AND STEELS RWANDA LTD supplies gabion mesh, steel wire, reinforcement rebar, structural steel, plumbing, electrical and construction materials from Kimironko, Kigali across Rwanda.',
+    'FORTIMESH AND STEELS RWANDA LTD supplies structural steel beams, channels, hollow sections, steel plates, reinforcement rebar, chain-link fencing, galvanised pipes and construction materials from Gisozi, Kigali across Rwanda.',
   pathName: '/',
   image: 'hero-kigali',
 });

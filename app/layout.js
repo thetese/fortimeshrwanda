@@ -2,16 +2,16 @@ import '../src/styles.css';
 import { site } from '../lib/site-data';
 
 export const viewport = {
-  themeColor: '#0A0B0E',
+  themeColor: '#0b150d',
   width: 'device-width',
   initialScale: 1,
 };
 
 export const metadata = {
   metadataBase: new URL(site.origin),
-  title: `${site.name} | Steel, Gabion Mesh & Construction Materials in Kigali, Rwanda`,
+  title: `${site.name} | Structural Steel, Rebar, Wire Mesh & Construction Materials in Kigali, Rwanda`,
   description:
-    'FORTIMESH AND STEELS RWANDA LTD supplies gabion mesh, steel wire, reinforcement rebar, structural steel, plumbing, electrical and construction materials from Kimironko, Kigali across Rwanda.',
+    'FORTIMESH AND STEELS RWANDA LTD supplies structural steel beams, channels, hollow sections, steel plates, reinforcement rebar, chain-link fencing, galvanised pipes and construction materials from Gisozi, Kigali across Rwanda.',
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },

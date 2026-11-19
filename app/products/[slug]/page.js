@@ -8,7 +8,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
-  const p = bySlug[slug];
+  const p = bySlug(slug);
   if (!p) {
     return buildMetadata({
       title: 'Page Not Found',
@@ -18,7 +18,7 @@ export async function generateMetadata({ params }) {
   }
   return buildMetadata({
     title: `${p.name} in Kigali, Rwanda`,
-    description: `${p.summary} Supplied by FORTIMESH AND STEELS RWANDA LTD from Kimironko, Kigali.`,
+    description: `${p.summary} Supplied by FORTIMESH AND STEELS RWANDA LTD from Gisozi, Kigali.`,
     pathName: `/products/${p.slug}/`,
     image: p.image,
     product: p,

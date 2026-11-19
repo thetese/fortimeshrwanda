@@ -1,6 +1,6 @@
 # FORTIMESH AND STEELS RWANDA LTD — Official Website
 
-Static, responsive B2B catalogue and quote-request platform for **FORTIMESH AND STEELS RWANDA LTD**, located in Kimironko, Kigali, Rwanda.
+Static, responsive B2B catalogue and quote-request platform for **FORTIMESH AND STEELS RWANDA LTD**, located in Gisozi, Kigali, Rwanda.
 
 ## Quick start
 
@@ -18,7 +18,7 @@ SITE_ORIGIN=https://fortimesh.rw npm run build
 ## Company & contact details configured (`src/build.mjs`)
 
 - **Company:** FORTIMESH AND STEELS RWANDA LTD
-- **Address:** KG 667 Street, Kimironko, Kigali, Rwanda
+- **Address:** KG 667 Street, Gisozi, Kigali, Rwanda
 - **Phone / WhatsApp:** `+250 793 086 644` (`https://wa.me/250793086644`)
 - **Email:** `fortimeshrwanda@gmail.com`
 - **Instagram:** [`@fortimesh_rwanda`](https://www.instagram.com/fortimesh_rwanda/)
