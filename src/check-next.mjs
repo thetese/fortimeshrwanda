@@ -54,6 +54,9 @@ const quoteHtml = fs.readFileSync(path.join(nextApp, 'quote.html'), 'utf8');
 if (!quoteHtml.includes('id="schedule-rows"') || !quoteHtml.includes('"FAQPage"')) {
   throw new Error('Missing schedule builder or FAQPage schema on quote page');
 }
+if (!quoteHtml.includes('/api/quote') || quoteHtml.includes('formsubmit.co')) {
+  throw new Error('Quote page must submit to /api/quote and not reference formsubmit.co');
+}
 
 const contactHtml = fs.readFileSync(path.join(nextApp, 'contact.html'), 'utf8');
 if (!contactHtml.includes('map-card__frame') || !contactHtml.includes('"FAQPage"')) {
@@ -63,6 +66,15 @@ if (!contactHtml.includes('map-card__frame') || !contactHtml.includes('"FAQPage"
 const apiRoute = path.join(root, 'app', 'api', 'quote', 'route.js');
 if (!fs.existsSync(apiRoute)) {
   throw new Error('Missing Next.js Route Handler app/api/quote/route.js');
+}
+
+for (const requiredFile of [
+  path.join(root, 'lib', 'mailer.mjs'),
+  path.join(root, '.env.example'),
+]) {
+  if (!fs.existsSync(requiredFile)) {
+    throw new Error(`Missing Google SMTP file: ${requiredFile}`);
+  }
 }
 
 const manifest = JSON.parse(fs.readFileSync(path.join(pub, 'img', 'manifest.json'), 'utf8'));
@@ -81,4 +93,4 @@ for (const asset of ['favicon.ico', 'brand/favicon-32.png', 'brand/logo.png', 'b
   }
 }
 
-console.log(`Verified ${htmlFiles.length} Next.js static HTML pages, /api/quote Route Handler, calculators, schedule builder, FAQ schema, map, and public assets.`);
+console.log(`Verified ${htmlFiles.length} Next.js static HTML pages, /api/quote Route Handler (Google SMTP), calculators, schedule builder, FAQ schema, map, and public assets.`);

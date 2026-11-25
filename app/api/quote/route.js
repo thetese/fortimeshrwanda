@@ -1,241 +1,217 @@
 import { NextResponse } from 'next/server';
+import {
+  escapeHtml,
+  isSmtpConfigured,
+  normalizeQuotePayload,
+  sendQuoteEmail,
+  validateQuotePayload,
+} from '../../../lib/mailer.mjs';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Accept',
 };
 
-const escHtml = (s) =>
-  String(s ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+function htmlResponse({ title, heading, message, reference, status = 200 }) {
+  const refBadge = reference
+    ? `<p style="font-family:monospace;background:#f1f5f9;display:inline-block;padding:6px 12px;border-radius:4px;border:1px solid #cbd5e1;color:#0f172a;">Reference: <strong>${escapeHtml(reference)}</strong></p>`
+    : '';
 
-function buildQuoteEmailHtml(payload) {
-  const items = String(payload.schedule_items || '')
-    .split('|')
-    .map((x) => x.trim())
-    .filter(Boolean);
-
-  const itemsHtml = items.length
-    ? `<ul style="margin:8px 0 0;padding-left:18px;color:#162620">${items
-        .map((item) => `<li style="margin-bottom:4px">${escHtml(item)}</li>`)
-        .join('')}</ul>`
-    : `<p style="margin:4px 0 0;color:#566861">${escHtml(payload.schedule_items)}</p>`;
-
-  return `<!DOCTYPE html>
+  const html = `<!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><title>${escHtml(payload._subject)}</title></head>
-<body style="margin:0;padding:24px;background:#f3f6f4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#162620">
-  <div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #d6e0da">
-    <div style="background:#091713;border-bottom:4px solid #185a45;padding:24px 28px;color:#ffffff">
-      <p style="margin:0;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#6fa866;font-weight:700">FORTIMESH AND STEELS RWANDA LTD</p>
-      <h1 style="margin:8px 0 4px;font-size:22px;font-weight:700;color:#ffffff">New Material Quote Request</h1>
-      <p style="margin:0;font-size:13px;color:#d6e0da">Reference: <strong>${escHtml(payload.reference)}</strong> · Submitted ${escHtml(payload.submitted_at)}</p>
-    </div>
-    <div style="padding:26px 28px">
-      <table style="width:100%;border-collapse:collapse;font-size:14px">
-        <tr>
-          <td style="padding:10px 0;border-bottom:1px solid #e6ede9;color:#566861;width:170px;vertical-align:top"><strong>Client / Company</strong></td>
-          <td style="padding:10px 0;border-bottom:1px solid #e6ede9;color:#162620"><strong>${escHtml(payload.client_name)}</strong></td>
-        </tr>
-        <tr>
-          <td style="padding:10px 0;border-bottom:1px solid #e6ede9;color:#566861;vertical-align:top"><strong>Reply Contact</strong></td>
-          <td style="padding:10px 0;border-bottom:1px solid #e6ede9;color:#185a45;font-weight:600">${escHtml(payload.reply_contact)}</td>
-        </tr>
-        <tr>
-          <td style="padding:10px 0;border-bottom:1px solid #e6ede9;color:#566861;vertical-align:top"><strong>Product Families</strong></td>
-          <td style="padding:10px 0;border-bottom:1px solid #e6ede9;color:#162620">${escHtml(payload.product_family)}</td>
-        </tr>
-        <tr>
-          <td style="padding:10px 0;border-bottom:1px solid #e6ede9;color:#566861;vertical-align:top"><strong>Total Quantity</strong></td>
-          <td style="padding:10px 0;border-bottom:1px solid #e6ede9;color:#162620"><strong>${escHtml(payload.quantity)}</strong></td>
-        </tr>
-        <tr>
-          <td style="padding:10px 0;border-bottom:1px solid #e6ede9;color:#566861;vertical-align:top"><strong>Itemised Schedule</strong></td>
-          <td style="padding:10px 0;border-bottom:1px solid #e6ede9;color:#162620">${itemsHtml}</td>
-        </tr>
-        <tr>
-          <td style="padding:10px 0;border-bottom:1px solid #e6ede9;color:#566861;vertical-align:top"><strong>Specifications &amp; Notes</strong></td>
-          <td style="padding:10px 0;border-bottom:1px solid #e6ede9;color:#162620;white-space:pre-wrap">${escHtml(payload.specifications)}</td>
-        </tr>
-        <tr>
-          <td style="padding:10px 0;border-bottom:1px solid #e6ede9;color:#566861;vertical-align:top"><strong>Delivery / Collection</strong></td>
-          <td style="padding:10px 0;border-bottom:1px solid #e6ede9;color:#162620">${escHtml(payload.delivery_location)}</td>
-        </tr>
-        <tr>
-          <td style="padding:10px 0;color:#566861;vertical-align:top"><strong>Target Timeline</strong></td>
-          <td style="padding:10px 0;color:#162620">${escHtml(payload.timeline)}</td>
-        </tr>
-      </table>
-    </div>
-    <div style="background:#f3f6f4;border-top:1px solid #d6e0da;padding:16px 28px;font-size:12px;color:#566861">
-      FORTIMESH AND STEELS RWANDA LTD · KG 667 Street, Gisozi, Kigali, Rwanda · +250 793 086 644
-    </div>
-  </div>
-</body>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>${escapeHtml(title)} | Fortimesh Rwanda</title>
+  </head>
+  <body style="margin:0;padding:32px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#091713;color:#f3f6f4;">
+    <main style="max-width:560px;margin:40px auto;background:#ffffff;color:#162620;padding:32px;border-radius:10px;border-top:4px solid #185a45;">
+      <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#185a45;font-weight:700;">FORTIMESH AND STEELS RWANDA LTD</p>
+      <h1 style="margin:0 0 12px;font-size:24px;">${escapeHtml(heading)}</h1>
+      ${refBadge}
+      <p style="line-height:1.6;color:#334155;">${escapeHtml(message)}</p>
+      <p style="margin-top:24px;">
+        <a href="/quote/" style="display:inline-block;padding:10px 18px;background:#185a45;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;">Return to Quote Page</a>
+        <a href="https://wa.me/250793086644" style="display:inline-block;margin-left:10px;padding:10px 18px;border:1px solid #cbd5e1;color:#0f172a;text-decoration:none;border-radius:6px;font-weight:600;">WhatsApp Sales Desk</a>
+      </p>
+    </main>
+  </body>
 </html>`;
-}
 
-function buildQuoteEmailText(payload) {
-  return [
-    `FORTIMESH MATERIAL QUOTE REQUEST (${payload.reference})`,
-    `Submitted: ${payload.submitted_at}`,
-    '',
-    `Client / Company: ${payload.client_name}`,
-    `Reply Contact: ${payload.reply_contact}`,
-    '',
-    `Product Families: ${payload.product_family}`,
-    `Total Quantity: ${payload.quantity}`,
-    `Itemised Schedule: ${payload.schedule_items}`,
-    `Specifications & Notes: ${payload.specifications}`,
-    '',
-    `Delivery / Collection: ${payload.delivery_location}`,
-    `Target Timeline: ${payload.timeline}`,
-  ].join('\n');
+  return new NextResponse(html, {
+    status,
+    headers: {
+      ...corsHeaders,
+      'Content-Type': 'text/html; charset=utf-8',
+    },
+  });
 }
 
 export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: corsHeaders });
 }
 
+export async function GET() {
+  return NextResponse.json(
+    {
+      ok: true,
+      provider: 'google-smtp',
+      configured: isSmtpConfigured(),
+    },
+    { status: 200, headers: corsHeaders },
+  );
+}
+
 export async function POST(request) {
+  let wantsHtml = false;
+
   try {
-    const body = await request.json().catch(() => ({}));
-    const {
-      reference = `FM-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}`,
-      product_family = '',
-      schedule_items = 'See specification summary',
-      quantity = '',
-      specifications = '',
-      delivery_location = '',
-      timeline = 'To discuss',
-      client_name = '',
-      reply_contact = '',
-    } = body;
+    const contentType = (request.headers.get('content-type') || '').toLowerCase();
+    const accept = (request.headers.get('accept') || '').toLowerCase();
+    const isFormSubmit =
+      contentType.includes('application/x-www-form-urlencoded') ||
+      contentType.includes('multipart/form-data');
+    wantsHtml = isFormSubmit && !accept.includes('application/json');
 
-    if (
-      !product_family ||
-      !quantity ||
-      !specifications ||
-      !delivery_location ||
-      !client_name ||
-      !reply_contact
-    ) {
-      return NextResponse.json(
-        { ok: false, error: 'Missing required quote fields.' },
-        { status: 400, headers: corsHeaders },
-      );
-    }
+    const rawBody = isFormSubmit
+      ? await request.formData()
+      : await request.json().catch(() => ({}));
 
-    const payload = {
-      _subject: `Fortimesh Quote Request [${reference}] — ${product_family}`,
-      _template: 'table',
-      _captcha: 'false',
-      reference,
-      product_family,
-      schedule_items,
-      quantity,
-      specifications,
-      delivery_location,
-      timeline,
-      client_name,
-      reply_contact,
-      submitted_at: new Date().toISOString(),
-    };
+    const { quote, isSpam } = normalizeQuotePayload(rawBody);
 
-    if (process.env.QUOTE_WEBHOOK_URL) {
-      await fetch(process.env.QUOTE_WEBHOOK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      }).catch(() => null);
-    }
-
-    const targetEmail = process.env.QUOTE_INBOX_EMAIL || 'fortimeshrwanda@gmail.com';
-    const resendApiKey = (process.env.RESEND_API_KEY || '').trim();
-
-    /* ---------- 1. Primary Delivery via Resend API ---------- */
-    if (resendApiKey && !resendApiKey.startsWith('re_YOUR_')) {
-      const fromAddress =
-        process.env.RESEND_FROM_EMAIL || 'Fortimesh Quotes <onboarding@resend.dev>';
-      const emailMatch = String(reply_contact).match(/[^\s,;<>]+@[^\s,;<>]+\.[^\s,;<>]+/);
-
-      const resendBody = {
-        from: fromAddress,
-        to: [targetEmail],
-        subject: payload._subject,
-        html: buildQuoteEmailHtml(payload),
-        text: buildQuoteEmailText(payload),
-      };
-      if (emailMatch) {
-        resendBody.reply_to = emailMatch[0];
+    if (isSpam) {
+      if (wantsHtml) {
+        return htmlResponse({
+          title: 'Quote Request Received',
+          heading: 'Quote request received',
+          message: 'Thank you. Your inquiry has been recorded.',
+          reference: quote.reference,
+          status: 200,
+        });
       }
-
-      const resendRes = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${resendApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(resendBody),
-      });
-
-      const resendJson = await resendRes.json().catch(() => ({}));
-
-      if (!resendRes.ok) {
-        return NextResponse.json(
-          {
-            ok: false,
-            provider: 'resend',
-            status: resendRes.status,
-            error: resendJson?.message || 'Resend API rejected the email request.',
-          },
-          { status: resendRes.status, headers: corsHeaders },
-        );
-      }
-
       return NextResponse.json(
         {
           ok: true,
-          provider: 'resend',
-          emailId: resendJson?.id || null,
-          reference,
-          receivedAt: payload.submitted_at,
-          note: 'Quote request sent via Resend.',
+          provider: 'google-smtp',
+          reference: quote.reference,
+          receivedAt: quote.submitted_at,
+          note: 'Quote request recorded.',
         },
         { status: 200, headers: corsHeaders },
       );
     }
 
-    /* ---------- 2. Fallback Delivery via FormSubmit ---------- */
-    const upstream = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(targetEmail)}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        Origin: 'https://fortimeshrwanda.vercel.app',
-        Referer: 'https://fortimeshrwanda.vercel.app/quote/',
-      },
-      body: JSON.stringify(payload),
-    }).catch(() => null);
+    const { valid, missing } = validateQuotePayload(quote);
+    if (!valid) {
+      if (wantsHtml) {
+        return htmlResponse({
+          title: 'Missing Required Fields',
+          heading: 'Please complete all required fields',
+          message: `Missing required quote information: ${missing.join(', ')}. Please go back and complete the form, or contact us directly on WhatsApp (+250 793 086 644).`,
+          status: 400,
+        });
+      }
+      return NextResponse.json(
+        { ok: false, error: 'Missing required quote fields.', missing },
+        { status: 400, headers: corsHeaders },
+      );
+    }
 
-    const upstreamJson = upstream ? await upstream.json().catch(() => ({})) : {};
+    if (process.env.QUOTE_WEBHOOK_URL) {
+      await fetch(process.env.QUOTE_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...quote,
+          _subject: `Fortimesh Quote Request [${quote.reference}] — ${quote.product_family}`,
+        }),
+      }).catch(() => null);
+    }
+
+    if (!isSmtpConfigured()) {
+      console.error('[api/quote] Google SMTP is not configured (missing SMTP_USER or SMTP_PASS).');
+      const errorMsg =
+        'Google SMTP is not configured on this server. Please send your request via WhatsApp or email app.';
+      if (wantsHtml) {
+        return htmlResponse({
+          title: 'Email Delivery Unavailable',
+          heading: 'Direct email delivery is not configured',
+          message: errorMsg,
+          reference: quote.reference,
+          status: 503,
+        });
+      }
+      return NextResponse.json(
+        { ok: false, error: errorMsg },
+        { status: 503, headers: corsHeaders },
+      );
+    }
+
+    let info;
+    try {
+      info = await sendQuoteEmail(quote);
+    } catch (err) {
+      console.error('[api/quote] Google SMTP send failed:', {
+        code: err?.code || 'UNKNOWN',
+        message: err?.message || 'Unknown SMTP error',
+      });
+      const errorMsg =
+        'Unable to send quote email right now. Please send via WhatsApp or open in your email app.';
+      if (wantsHtml) {
+        return htmlResponse({
+          title: 'Email Delivery Failed',
+          heading: 'Unable to send quote email right now',
+          message: errorMsg,
+          reference: quote.reference,
+          status: 502,
+        });
+      }
+      return NextResponse.json(
+        { ok: false, error: errorMsg },
+        { status: 502, headers: corsHeaders },
+      );
+    }
+
+    if (wantsHtml) {
+      return htmlResponse({
+        title: 'Quote Request Sent',
+        heading: 'Quote request sent to Fortimesh sales desk',
+        message:
+          'Your material request has been delivered by email to our Kigali sales desk. For immediate dispatch confirmation, message us on WhatsApp.',
+        reference: quote.reference,
+        status: 200,
+      });
+    }
 
     return NextResponse.json(
       {
         ok: true,
-        provider: 'formsubmit',
-        reference,
-        receivedAt: payload.submitted_at,
-        upstreamStatus: upstream?.status ?? null,
-        note: upstreamJson?.message || 'Quote request recorded.',
+        provider: 'google-smtp',
+        reference: quote.reference,
+        messageId: info.messageId,
+        receivedAt: quote.submitted_at,
+        note: 'Quote request sent via Google SMTP.',
       },
       { status: 200, headers: corsHeaders },
     );
-  } catch {
+  } catch (err) {
+    console.error('[api/quote] Unexpected quote request error:', {
+      code: err?.code || 'INTERNAL',
+      message: err?.message || 'Unexpected error',
+    });
+    if (wantsHtml) {
+      return htmlResponse({
+        title: 'Quote Request Error',
+        heading: 'Unable to process quote request',
+        message:
+          'Something went wrong while processing your request. Please return to the quote page or contact us on WhatsApp (+250 793 086 644).',
+        status: 500,
+      });
+    }
     return NextResponse.json(
       { ok: false, error: 'Unable to process quote request.' },
       { status: 500, headers: corsHeaders },

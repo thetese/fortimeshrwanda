@@ -6,10 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "check": "node src/check-next.mjs"
+    "check": "node src/check-next.mjs",
+    "verify:smtp": "node src/verify-smtp.mjs",
+    "test:smtp": "node --test src/test-smtp.mjs"
   },
   "dependencies": {
     "next": "^15.2.0",
+    "nodemailer": "^10.6.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   }

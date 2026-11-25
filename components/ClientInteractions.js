@@ -382,6 +382,7 @@ export default function ClientInteractions() {
       form.addEventListener('change', updateProgress, { signal });
 
       let message = '';
+      let mailSubject = '';
       let currentPayload = null;
 
       form.addEventListener(
@@ -402,11 +403,9 @@ export default function ClientInteractions() {
           const scheduleItems = getScheduleItems();
           const dateStamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
           const ref = `FM-${dateStamp}-${String(Math.floor(1000 + Math.random() * 9000))}`;
+          mailSubject = `Fortimesh Quote Request [${ref}] — ${productNames}`;
 
           currentPayload = {
-            _subject: `Fortimesh Quote Request [${ref}] — ${productNames}`,
-            _template: 'table',
-            _captcha: 'false',
             reference: ref,
             product_family: productNames,
             schedule_items: scheduleItems.length ? scheduleItems.join(' | ') : 'See specification summary',
@@ -416,6 +415,7 @@ export default function ClientInteractions() {
             timeline: String(data.get('timeline') || 'To discuss'),
             client_name: String(data.get('name') || ''),
             reply_contact: String(data.get('contact') || ''),
+            _website: String(data.get('_website') || ''),
           };
 
           const lines = [
@@ -450,7 +450,7 @@ export default function ClientInteractions() {
             waBtn.href = `https://wa.me/${waBtn.dataset.number}?text=${encodeURIComponent(message)}`;
           }
           if (mailBtn) {
-            mailBtn.href = `mailto:${mailBtn.dataset.email}?subject=${encodeURIComponent(currentPayload._subject)}&body=${encodeURIComponent(message)}`;
+            mailBtn.href = `mailto:${mailBtn.dataset.email}?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(message)}`;
           }
           result.hidden = false;
           requestAnimationFrame(() => result.classList.add('is-in'));
@@ -470,34 +470,27 @@ export default function ClientInteractions() {
           status.textContent = 'Submitting your request to Fortimesh sales desk…';
           try {
             const apiUrl = onlineBtn.dataset.api || '/api/quote';
-            let ok = false;
-            let apiError = '';
-            try {
-              const apiRes = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-                body: JSON.stringify(currentPayload),
-              });
-              const apiJson = await apiRes.json().catch(() => ({}));
-              ok = apiRes.ok && apiJson.ok !== false;
-              if (!ok && apiJson.error) apiError = apiJson.error;
-            } catch {}
-            if (!ok && !apiError && onlineBtn.dataset.endpoint) {
-              const fallbackRes = await fetch(onlineBtn.dataset.endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-                body: JSON.stringify(currentPayload),
-              });
-              ok = fallbackRes.ok;
+            const apiRes = await fetch(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+              body: JSON.stringify(currentPayload),
+            });
+            const resJson = await apiRes.json().catch(() => ({}));
+            if (!apiRes.ok || !resJson?.ok) {
+              const serverError = new Error(
+                resJson?.error ||
+                  'Direct online delivery could not be completed—please click "Send on WhatsApp" or "Open in email app" above.',
+              );
+              serverError.isServerError = Boolean(resJson?.error);
+              throw serverError;
             }
-            if (!ok) throw new Error(apiError || 'Delivery failed');
             if (label) label.textContent = 'Submitted';
-            status.textContent = `Request ${currentPayload.reference} delivered to our Kigali sales desk. For immediate dispatch confirmation, also click Send on WhatsApp.`;
+            status.textContent = `Request ${currentPayload.reference} emailed to our Kigali sales desk. For immediate dispatch confirmation, also click Send on WhatsApp.`;
           } catch (err) {
             onlineBtn.disabled = false;
             if (label) label.textContent = 'Submit online';
-            status.textContent = err?.message && err.message !== 'Delivery failed'
-              ? `Delivery error: ${err.message} — please click "Send on WhatsApp" or "Open in email app" above.`
+            status.textContent = err?.isServerError
+              ? err.message
               : 'Direct online delivery could not be completed—please click "Send on WhatsApp" or "Open in email app" above.';
           }
         },

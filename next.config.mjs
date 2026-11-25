@@ -2,6 +2,7 @@
 const nextConfig = {
   trailingSlash: true,
   reactStrictMode: true,
+  serverExternalPackages: ['nodemailer'],
   outputFileTracingRoot: import.meta.dirname,
 };
 
