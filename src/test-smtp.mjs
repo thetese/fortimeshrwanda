@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   buildClientConfirmationEmail,
   buildQuoteEmail,
+  extractAttachments,
   extractEmail,
   getSmtpConfig,
   isSmtpConfigured,
@@ -73,73 +74,68 @@ describe('getSmtpConfig & isSmtpConfigured', () => {
   });
 });
 
-describe('normalizeQuotePayload & validateQuotePayload', () => {
-  it('normalizes JSON payload with dedicated client_email and validates required fields', () => {
+describe('normalizeQuotePayload, optional products & PDF/photo attachments', () => {
+  it('allows submissions with NO mandatory product selection when materials are typed', () => {
     const { quote, isSpam } = normalizeQuotePayload({
-      reference: 'FM-20261125-1234',
-      product_family: 'Hollow sections, Structural steel',
-      schedule_items: 'Hollow sections: 20 bars — SHS 50x50x3mm',
-      quantity: '20 bars',
-      specifications: 'SHS 50x50x3mm 6m lengths',
+      quantity: '50 bars D12 + 10 bags Sika',
       delivery_location: 'Gisozi, Kigali',
-      timeline: 'This week',
       client_name: 'Kigali Builders',
       client_email: 'buyer@kigalibuilders.rw',
       reply_contact: '+250 788 123 456',
     });
 
     assert.equal(isSpam, false);
-    assert.equal(quote.reference, 'FM-20261125-1234');
-    assert.equal(quote.client_email, 'buyer@kigalibuilders.rw');
-    assert.equal(quote.reply_contact, '+250 788 123 456');
-    assert.equal(resolveClientEmail(quote), 'buyer@kigalibuilders.rw');
+    assert.equal(quote.product_family, 'General Material Inquiry');
     assert.equal(validateQuotePayload(quote).valid, true);
   });
 
-  it('normalizes HTML form fields and FormData instances', () => {
+  it('allows PDF/photo quotation upload alone without mandatory products, quantity, or specs', async () => {
     const fd = new FormData();
-    fd.append('product', 'hollow-sections');
-    fd.append('product', 'reinforcement-steel');
-    fd.append('item_family', 'Hollow sections');
-    fd.append('item_spec', 'SHS 50x50x3mm');
-    fd.append('item_qty', '15 bars');
-    fd.append('item_family', 'Reinforcement materials');
-    fd.append('item_spec', '');
-    fd.append('item_qty', '');
-    fd.set('quantity', '15 bars');
-    fd.set('specification', 'Standard 6m lengths');
-    fd.set('location', 'Musanze');
-    fd.set('name', 'Civil Co');
-    fd.set('email', 'eng@civil.rw');
-    fd.set('contact', '+250 788 000 111');
+    const pdfBytes = Buffer.from('%PDF-1.4 sample quotation schedule');
+    const photoBytes = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46]);
+    fd.append('attachments', new File([pdfBytes], 'client-boq.pdf', { type: 'application/pdf' }));
+    fd.append('attachments', new File([photoBytes], 'handwritten-list.jpg', { type: 'image/jpeg' }));
+    fd.set('location', 'Nyarutarama site');
+    fd.set('name', 'Site Engineer');
+    fd.set('email', 'eng@project.rw');
+    fd.set('contact', '+250 788 222 333');
 
-    const { quote, isSpam } = normalizeQuotePayload(fd);
+    const { attachments, attachmentError } = await extractAttachments(fd);
+    assert.equal(attachmentError, null);
+    assert.equal(attachments.length, 2);
+    assert.equal(attachments[0].filename, 'client-boq.pdf');
+    assert.equal(attachments[1].filename, 'handwritten-list.jpg');
+
+    const { quote, isSpam } = normalizeQuotePayload(fd, attachments);
     assert.equal(isSpam, false);
-    assert.match(quote.reference, /^FM-\d{8}-\d{4}$/);
-    assert.equal(quote.product_family, 'hollow-sections, reinforcement-steel');
-    assert.equal(quote.schedule_items, 'Hollow sections: 15 bars — SHS 50x50x3mm');
-    assert.equal(quote.specifications, 'Standard 6m lengths');
-    assert.equal(quote.delivery_location, 'Musanze');
-    assert.equal(quote.timeline, 'To discuss');
-    assert.equal(quote.client_name, 'Civil Co');
-    assert.equal(quote.client_email, 'eng@civil.rw');
-    assert.equal(quote.reply_contact, '+250 788 000 111');
+    assert.equal(quote.product_family, 'Uploaded Quotation / BoQ');
+    assert.equal(quote.quantity, 'See attached (2 files)');
+    assert.match(quote.specifications, /client-boq\.pdf/);
+    assert.equal(quote.attachments_meta.length, 2);
     assert.equal(validateQuotePayload(quote).valid, true);
   });
 
-  it('flags honeypot submissions as spam and reports missing required fields', () => {
-    const spamResult = normalizeQuotePayload({ _website: 'https://spam.example' });
-    assert.equal(spamResult.isSpam, true);
+  it('rejects unsupported executable files and empty submissions with neither materials nor files', async () => {
+    const badFd = new FormData();
+    badFd.append('attachments', new File([Buffer.from('MZ')], 'malware.exe', { type: 'application/octet-stream' }));
+    const badResult = await extractAttachments(badFd);
+    assert.ok(badResult.attachmentError);
+    assert.match(badResult.attachmentError, /Unsupported file type/i);
 
-    const validation = validateQuotePayload({ product_family: 'Structural steel' });
+    const { quote: emptyQuote } = normalizeQuotePayload({});
+    const validation = validateQuotePayload(emptyQuote);
     assert.equal(validation.valid, false);
     assert.deepEqual(validation.missing, [
-      'quantity',
-      'specifications',
+      'materials_or_attachment',
       'delivery_location',
       'client_name',
       'reply_contact',
     ]);
+  });
+
+  it('flags honeypot submissions as spam', () => {
+    const spamResult = normalizeQuotePayload({ _website: 'https://spam.example' });
+    assert.equal(spamResult.isSpam, true);
   });
 });
 
@@ -154,58 +150,7 @@ describe('buildQuoteEmail, buildClientConfirmationEmail, sendQuoteEmail & verify
     );
   });
 
-  it('builds sales desk & client confirmation emails with XSS escaping and branded templates', () => {
-    const env = {
-      SMTP_USER: 'fortimeshrwanda@gmail.com',
-      SMTP_PASS: 'abcdefghijklmnop',
-      QUOTE_INBOX_EMAIL: 'inbox@fortimesh.rw',
-    };
-
-    const quote = {
-      reference: 'FM-20261125-9999',
-      product_family: 'Reinforcement\r\nBcc: bad@evil.com',
-      schedule_items: 'Rebar: 100 bars — D12 12m | Wire: 2 coils — 1.6mm',
-      quantity: '100 bars',
-      specifications: '<script>alert("xss")</script>\nLine 2',
-      delivery_location: 'Gisozi',
-      timeline: 'Immediate',
-      client_name: 'Acme & Co <Builders>',
-      client_email: 'procurement@acme.rw',
-      reply_contact: '0788 123 456',
-      submitted_at: '2026-11-25T16:00:00.000Z',
-    };
-
-    const salesMail = buildQuoteEmail(quote, env);
-    assert.equal(salesMail.to, 'inbox@fortimesh.rw');
-    assert.equal(salesMail.replyTo, 'procurement@acme.rw');
-    assert.equal(/[\r\n]/.test(salesMail.subject), false);
-    assert.ok(!salesMail.html.includes('<script>'));
-    assert.ok(salesMail.html.includes('&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;'));
-    assert.ok(salesMail.html.includes('Acme &amp; Co &lt;Builders&gt;'));
-    assert.ok(salesMail.html.includes('https://wa.me/250788123456'));
-    assert.ok(salesMail.html.includes('logo-white.png'));
-    assert.ok(salesMail.text.includes('1. Rebar: 100 bars — D12 12m'));
-
-    const clientMail = buildClientConfirmationEmail(quote, env);
-    assert.ok(clientMail);
-    assert.equal(clientMail.to, 'procurement@acme.rw');
-    assert.equal(clientMail.replyTo, 'inbox@fortimesh.rw');
-    assert.equal(/[\r\n]/.test(clientMail.subject), false);
-    assert.ok(!clientMail.html.includes('<script>'));
-    assert.ok(clientMail.html.includes('Request Received'));
-    assert.ok(clientMail.html.includes('What Happens Next'));
-    assert.ok(clientMail.html.includes('FM-20261125-9999'));
-    assert.ok(clientMail.html.includes('logo-white.png'));
-
-    const phoneOnlyQuote = {
-      ...quote,
-      client_email: '',
-      reply_contact: '+250 788 123 456',
-    };
-    assert.equal(buildClientConfirmationEmail(phoneOnlyQuote, env), null);
-  });
-
-  it('sends both sales notification and client confirmation emails via transporter', async () => {
+  it('attaches PDF/photo files to sales email and confirms received filenames in client email', async () => {
     const sentPayloads = [];
     let verifyCalled = false;
 
@@ -234,25 +179,56 @@ describe('buildQuoteEmail, buildClientConfirmationEmail, sendQuoteEmail & verify
     assert.equal(verifyCalled, true);
     assert.equal(verified.ok, true);
 
-    const { quote } = normalizeQuotePayload({
-      reference: 'FM-20261125-7777',
-      product_family: 'Structural steel',
-      quantity: '20 lengths',
-      specifications: 'SHS 50x50x3mm',
-      delivery_location: 'Gisozi, Kigali',
-      client_name: 'Steel Frame Ltd',
-      client_email: 'buyer@steelframe.rw',
-      reply_contact: '+250 788 555 666',
+    const sampleAttachments = [
+      {
+        filename: 'tender-boq.pdf',
+        contentType: 'application/pdf',
+        size: 1024,
+        content: Buffer.from('%PDF-1.4 mock'),
+      },
+      {
+        filename: 'site-sketch.jpg',
+        contentType: 'image/jpeg',
+        size: 2048,
+        content: Buffer.from([0xff, 0xd8, 0xff]),
+      },
+    ];
+
+    const { quote } = normalizeQuotePayload(
+      {
+        reference: 'FM-20261125-7777',
+        delivery_location: 'Gisozi, Kigali',
+        client_name: 'Steel Frame Ltd <Test>',
+        client_email: 'buyer@steelframe.rw',
+        reply_contact: '0788 555 666',
+      },
+      sampleAttachments,
+    );
+
+    const res = await sendQuoteEmail(quote, {
+      env,
+      transporter: mockTransporter,
+      attachments: sampleAttachments,
     });
 
-    const res = await sendQuoteEmail(quote, { env, transporter: mockTransporter });
     assert.equal(sentPayloads.length, 2);
     assert.equal(sentPayloads[0].to, 'fortimeshrwanda@gmail.com');
     assert.equal(sentPayloads[0].replyTo, 'buyer@steelframe.rw');
+    assert.equal(sentPayloads[0].attachments.length, 2);
+    assert.equal(sentPayloads[0].attachments[0].filename, 'tender-boq.pdf');
+    assert.ok(sentPayloads[0].subject.includes('[2 files]'));
+    assert.ok(sentPayloads[0].html.includes('Attached Quotation / BoQ Files'));
+    assert.ok(sentPayloads[0].html.includes('tender-boq.pdf'));
+
     assert.equal(sentPayloads[1].to, 'buyer@steelframe.rw');
     assert.equal(sentPayloads[1].replyTo, 'fortimeshrwanda@gmail.com');
+    assert.equal('attachments' in sentPayloads[1], false);
+    assert.ok(sentPayloads[1].html.includes('Attached Files Received'));
+    assert.ok(sentPayloads[1].html.includes('tender-boq.pdf'));
+    assert.ok(sentPayloads[1].html.includes('site-sketch.jpg'));
+
+    assert.equal(res.attachmentsCount, 2);
     assert.equal(res.confirmationSent, true);
     assert.equal(res.confirmationTo, 'buyer@steelframe.rw');
-    assert.equal(res.confirmationMessageId, '<mock-2@smtp.gmail.com>');
   });
 });

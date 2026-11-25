@@ -1284,6 +1284,140 @@ html.vt-filter::view-transition-old(root), html.vt-filter::view-transition-new(r
   }
 }
 
+/* PDF / Photo Quotation Dropzone on /quote/ */
+.opt {
+  font-weight: 500;
+  font-size: .78rem;
+  color: var(--muted-2);
+}
+.qfiles {
+  margin: 0 0 26px;
+}
+.qfiles__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.qfiles__drop {
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 22px;
+  background: var(--paper);
+  border: 1.5px dashed var(--teal);
+  cursor: pointer;
+  transition: background-color .25s, border-color .25s, box-shadow .25s;
+}
+.qfiles__drop:hover,
+.qfiles.is-drag .qfiles__drop {
+  background: var(--teal-50);
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px var(--teal-50);
+}
+.qfiles__icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--white);
+  border: 1px solid var(--line);
+  color: var(--teal);
+}
+.qfiles__icon svg {
+  width: 21px;
+  height: 21px;
+}
+.qfiles__copy strong {
+  display: block;
+  font-size: .95rem;
+  color: var(--ink);
+  margin-bottom: 3px;
+}
+.qfiles__copy small {
+  display: block;
+  font-size: .81rem;
+  line-height: 1.45;
+  color: var(--slate);
+}
+.qfiles__btn {
+  white-space: nowrap;
+}
+.qfiles__list {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.qfiles__list[hidden] {
+  display: none;
+}
+.qfiles__item {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  font-size: .86rem;
+}
+.qfiles__badge {
+  padding: 3px 7px;
+  background: var(--ink);
+  color: var(--teal-l);
+  font: 700 .68rem/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: .06em;
+  border-radius: 3px;
+}
+.qfiles__name {
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.qfiles__size {
+  font-size: .78rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.qfiles__remove {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  color: var(--slate);
+  font-size: 1rem;
+  line-height: 1;
+  transition: color .2s, border-color .2s, background-color .2s;
+}
+.qfiles__remove:hover {
+  color: #b42318;
+  border-color: #b42318;
+  background: rgba(180, 35, 24, .06);
+}
+.qfiles__err {
+  margin-top: 10px;
+  font-size: .83rem;
+  font-weight: 600;
+  color: #b42318;
+}
+@media (max-width: 720px) {
+  .qfiles__drop {
+    grid-template-columns: 42px 1fr;
+  }
+  .qfiles__btn {
+    grid-column: 1 / -1;
+    justify-content: center;
+  }
+}
+
 /* Print / PDF Spec Sheet & Company Profile */
 @media print {
   @page {

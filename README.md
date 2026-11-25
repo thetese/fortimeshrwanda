@@ -29,8 +29,9 @@ SITE_ORIGIN=https://fortimesh.rw npm run build
 ## Lead & quote delivery (`/quote/` & `/api/quote`)
 
 - Generates a timestamped quote reference (`FM-YYYYMMDD-XXXX`) with local draft autosave.
+- **PDF & Photo Quotation Uploads (no mandatory product checkboxes):** Clients can upload up to 5 files (PDF BoQs, smartphone photos of handwritten material lists, or Excel/Word schedules up to 4 MB total, with automatic client-side photo compression) without needing to select product checkboxes or retype their list.
 - **Send on WhatsApp:** Opens a pre-filled WhatsApp chat to `+250 793 086 644`.
-- **Submit online:** Sends the structured quote request to `/api/quote`, which dispatches a branded HTML + plain-text lead notification to `QUOTE_INBOX_EMAIL` (default `fortimeshrwanda@gmail.com`) **and** an instant branded confirmation receipt to the client's email via Google SMTP (`nodemailer` in `lib/mailer.mjs`), with progressive HTML form fallback when JavaScript is disabled.
+- **Submit online:** Sends the quote request (and any attached PDF/photo files) via `multipart/form-data` to `/api/quote`, which emails the full attachments to `QUOTE_INBOX_EMAIL` (`fortimeshrwanda@gmail.com`) **and** sends an instant branded confirmation receipt to the client's email via Google SMTP (`lib/mailer.mjs`).
 - **Open in email app / Copy / Share:** Direct `mailto:`, clipboard copy, and Web Share API support.
 
 ## Google SMTP configuration

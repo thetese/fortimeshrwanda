@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import {
   escapeHtml,
+  extractAttachments,
   isSmtpConfigured,
   normalizeQuotePayload,
   resolveClientEmail,
@@ -94,6 +95,7 @@ export async function GET() {
       provider: 'google-smtp',
       configured: isSmtpConfigured(),
       clientConfirmation: true,
+      attachmentsSupported: true,
     },
     { status: 200, headers: corsHeaders },
   );
@@ -114,7 +116,23 @@ export async function POST(request) {
       ? await request.formData()
       : await request.json().catch(() => ({}));
 
-    const { quote, isSpam } = normalizeQuotePayload(rawBody);
+    const { attachments, attachmentError } = await extractAttachments(rawBody);
+    if (attachmentError) {
+      if (wantsHtml) {
+        return htmlResponse({
+          title: 'Attachment Error',
+          heading: 'Unable to attach file',
+          message: attachmentError,
+          status: 400,
+        });
+      }
+      return NextResponse.json(
+        { ok: false, error: attachmentError },
+        { status: 400, headers: corsHeaders },
+      );
+    }
+
+    const { quote, isSpam } = normalizeQuotePayload(rawBody, attachments);
 
     if (isSpam) {
       if (wantsHtml) {
@@ -140,16 +158,19 @@ export async function POST(request) {
 
     const { valid, missing } = validateQuotePayload(quote);
     if (!valid) {
+      const errorText = missing.includes('materials_or_attachment')
+        ? 'Please upload your PDF/photo quotation or enter the materials needed, along with your contact and delivery details.'
+        : 'Missing required quote fields.';
       if (wantsHtml) {
         return htmlResponse({
           title: 'Missing Required Fields',
-          heading: 'Please complete all required fields',
-          message: `Missing required quote information: ${missing.join(', ')}. Please go back and complete the form, or contact us directly on WhatsApp (+250 793 086 644).`,
+          heading: 'Please complete the required details',
+          message: `${errorText} (${missing.join(', ')}).`,
           status: 400,
         });
       }
       return NextResponse.json(
-        { ok: false, error: 'Missing required quote fields.', missing },
+        { ok: false, error: errorText, missing },
         { status: 400, headers: corsHeaders },
       );
     }
@@ -173,13 +194,15 @@ export async function POST(request) {
       );
     }
 
+    const { _has_material_input, ...cleanQuote } = quote;
+
     if (process.env.QUOTE_WEBHOOK_URL) {
       await fetch(process.env.QUOTE_WEBHOOK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...quote,
-          _subject: `Fortimesh Quote Request [${quote.reference}] — ${quote.product_family}`,
+          ...cleanQuote,
+          _subject: `Fortimesh Quote Request [${cleanQuote.reference}] — ${cleanQuote.product_family}`,
         }),
       }).catch(() => null);
     }
@@ -193,7 +216,7 @@ export async function POST(request) {
           title: 'Email Delivery Unavailable',
           heading: 'Direct email delivery is not configured',
           message: errorMsg,
-          reference: quote.reference,
+          reference: cleanQuote.reference,
           status: 503,
         });
       }
@@ -203,14 +226,17 @@ export async function POST(request) {
       );
     }
 
-    const clientEmail = resolveClientEmail(quote)?.toLowerCase() || '';
+    const clientEmail = resolveClientEmail(cleanQuote)?.toLowerCase() || '';
     const allowClientConfirmation = clientEmail
       ? countRecentHits(recipientHits, clientEmail, MAX_CONFIRMATIONS_PER_EMAIL).allowed
       : false;
 
     let info;
     try {
-      info = await sendQuoteEmail(quote, { sendClientConfirmation: allowClientConfirmation });
+      info = await sendQuoteEmail(cleanQuote, {
+        attachments,
+        sendClientConfirmation: allowClientConfirmation,
+      });
     } catch (err) {
       console.error('[api/quote] Google SMTP send failed:', {
         code: err?.code || 'UNKNOWN',
@@ -223,7 +249,7 @@ export async function POST(request) {
           title: 'Email Delivery Failed',
           heading: 'Unable to send quote email right now',
           message: errorMsg,
-          reference: quote.reference,
+          reference: cleanQuote.reference,
           status: 502,
         });
       }
@@ -241,8 +267,10 @@ export async function POST(request) {
       return htmlResponse({
         title: 'Quote Request Sent',
         heading: 'Quote request sent to Fortimesh sales desk',
-        message: `Your material request has been delivered by email to our Gisozi, Kigali sales desk.${confirmNote} For immediate dispatch confirmation, message us on WhatsApp.`,
-        reference: quote.reference,
+        message: `Your material request${
+          info.attachmentsCount ? ` (${info.attachmentsCount} attached file${info.attachmentsCount === 1 ? '' : 's'})` : ''
+        } has been delivered by email to our Gisozi, Kigali sales desk.${confirmNote} For immediate dispatch confirmation, message us on WhatsApp.`,
+        reference: cleanQuote.reference,
         status: 200,
       });
     }
@@ -251,12 +279,13 @@ export async function POST(request) {
       {
         ok: true,
         provider: 'google-smtp',
-        reference: quote.reference,
+        reference: cleanQuote.reference,
         messageId: info.messageId,
+        attachmentsReceived: info.attachmentsCount,
         confirmationSent: info.confirmationSent,
         confirmationTo: info.confirmationTo,
         confirmationMessageId: info.confirmationMessageId,
-        receivedAt: quote.submitted_at,
+        receivedAt: cleanQuote.submitted_at,
         note: info.confirmationSent
           ? `Quote request sent to sales desk and confirmation sent to ${info.confirmationTo}.`
           : 'Quote request sent via Google SMTP.',

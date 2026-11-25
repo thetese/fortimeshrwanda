@@ -270,6 +270,68 @@ export default function ClientInteractions() {
       const rowsWrap = document.querySelector('#schedule-rows');
       const addRowBtn = document.querySelector('#add-line-item');
       const rowTemplate = rowsWrap?.querySelector('[data-sched-row]')?.cloneNode(true);
+      const dropzone = document.querySelector('#quote-dropzone');
+      const fileInput = document.querySelector('#quote-files');
+      const fileListEl = document.querySelector('#quote-file-list');
+      const fileErrEl = document.querySelector('#quote-file-error');
+
+      const MAX_FILES = 5;
+      const MAX_TOTAL_BYTES = 4 * 1024 * 1024;
+      let selectedFiles = [];
+
+      const formatBytes = (bytes) => {
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(bytes < 10240 ? 1 : 0)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+      };
+
+      const badgeForFile = (file) => {
+        const name = (file.name || '').toLowerCase();
+        const type = (file.type || '').toLowerCase();
+        if (name.endsWith('.pdf') || type === 'application/pdf') return 'PDF';
+        if (type.startsWith('image/') || /\.(jpg|jpeg|png|webp|gif|heic|heif|bmp|tiff?)$/.test(name)) return 'PHOTO';
+        if (/\.(xlsx?|csv|ods)$/.test(name)) return 'SHEET';
+        return 'FILE';
+      };
+
+      const isAllowedFile = (file) => {
+        const name = (file.name || '').toLowerCase();
+        const type = (file.type || '').toLowerCase();
+        if (/\.(exe|bat|cmd|com|msi|scr|vbs|js|mjs|cjs|ps1|sh|dll|jar|apk)$/.test(name)) return false;
+        if (/\.(pdf|jpg|jpeg|png|webp|gif|heic|heif|bmp|tif|tiff|xls|xlsx|csv|doc|docx|txt|rtf|odt|ods)$/.test(name)) {
+          return true;
+        }
+        return type === 'application/pdf' || type.startsWith('image/');
+      };
+
+      const optimizePhotoIfLarge = async (file) => {
+        const type = (file.type || '').toLowerCase();
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(type) || file.size <= 900 * 1024) {
+          return file;
+        }
+        try {
+          const bitmap = await createImageBitmap(file);
+          const maxDim = 2000;
+          const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+          const w = Math.max(1, Math.round(bitmap.width * scale));
+          const h = Math.max(1, Math.round(bitmap.height * scale));
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return file;
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, w, h);
+          ctx.drawImage(bitmap, 0, 0, w, h);
+          if (typeof bitmap.close === 'function') bitmap.close();
+          const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.84));
+          if (!blob || blob.size >= file.size) return file;
+          const cleanName = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+          return new File([blob], cleanName, { type: 'image/jpeg', lastModified: Date.now() });
+        } catch {
+          return file;
+        }
+      };
 
       const getCheckedProducts = () => [...form.querySelectorAll('input[name="product"]:checked')];
 
@@ -285,13 +347,145 @@ export default function ClientInteractions() {
           .filter(Boolean);
       };
 
+      const clearMaterialValidity = () => {
+        form.elements.specification?.setCustomValidity?.('');
+      };
+
+      const renderSelectedFiles = () => {
+        if (!fileListEl) return;
+        fileListEl.innerHTML = '';
+        if (!selectedFiles.length) {
+          fileListEl.hidden = true;
+          return;
+        }
+        fileListEl.hidden = false;
+        selectedFiles.forEach((file, idx) => {
+          const li = document.createElement('li');
+          li.className = 'qfiles__item';
+
+          const badge = document.createElement('span');
+          badge.className = 'qfiles__badge';
+          badge.textContent = badgeForFile(file);
+
+          const name = document.createElement('span');
+          name.className = 'qfiles__name';
+          name.textContent = file.name;
+
+          const size = document.createElement('span');
+          size.className = 'qfiles__size';
+          size.textContent = formatBytes(file.size);
+
+          const removeBtn = document.createElement('button');
+          removeBtn.type = 'button';
+          removeBtn.className = 'qfiles__remove';
+          removeBtn.setAttribute('aria-label', `Remove ${file.name}`);
+          removeBtn.textContent = '×';
+          removeBtn.addEventListener('click', () => {
+            selectedFiles.splice(idx, 1);
+            if (fileErrEl) fileErrEl.hidden = true;
+            renderSelectedFiles();
+            updateProgress();
+          });
+
+          li.append(badge, name, size, removeBtn);
+          fileListEl.appendChild(li);
+        });
+      };
+
+      const addIncomingFiles = async (fileList) => {
+        if (!fileList || !fileList.length) return;
+        if (fileErrEl) {
+          fileErrEl.hidden = true;
+          fileErrEl.textContent = '';
+        }
+        const incoming = [...fileList];
+        if (selectedFiles.length + incoming.length > MAX_FILES) {
+          if (fileErrEl) {
+            fileErrEl.textContent = `You can attach up to ${MAX_FILES} files per quote request.`;
+            fileErrEl.hidden = false;
+          }
+          return;
+        }
+
+        const nextFiles = [...selectedFiles];
+        for (const rawFile of incoming) {
+          if (!isAllowedFile(rawFile)) {
+            if (fileErrEl) {
+              fileErrEl.textContent = `Unsupported file "${rawFile.name}". Please choose a PDF, photo (JPG/PNG/WebP), or Excel/Word BoQ.`;
+              fileErrEl.hidden = false;
+            }
+            return;
+          }
+          const processed = await optimizePhotoIfLarge(rawFile);
+          nextFiles.push(processed);
+        }
+
+        const totalSize = nextFiles.reduce((sum, f) => sum + f.size, 0);
+        if (totalSize > MAX_TOTAL_BYTES) {
+          if (fileErrEl) {
+            fileErrEl.textContent =
+              'Total file size exceeds 4 MB. Please remove a file, compress the PDF, or send large drawings on WhatsApp (+250 793 086 644).';
+            fileErrEl.hidden = false;
+          }
+          return;
+        }
+
+        selectedFiles = nextFiles;
+        clearMaterialValidity();
+        renderSelectedFiles();
+        updateProgress();
+      };
+
+      if (fileInput) {
+        fileInput.addEventListener(
+          'change',
+          async () => {
+            await addIncomingFiles(fileInput.files);
+            fileInput.value = '';
+          },
+          { signal },
+        );
+      }
+
+      if (dropzone) {
+        ['dragenter', 'dragover'].forEach((evt) => {
+          dropzone.addEventListener(
+            evt,
+            (e) => {
+              e.preventDefault();
+              dropzone.classList.add('is-drag');
+            },
+            { signal },
+          );
+        });
+        ['dragleave', 'drop'].forEach((evt) => {
+          dropzone.addEventListener(
+            evt,
+            (e) => {
+              e.preventDefault();
+              dropzone.classList.remove('is-drag');
+            },
+            { signal },
+          );
+        });
+        dropzone.addEventListener(
+          'drop',
+          async (e) => {
+            if (e.dataTransfer?.files?.length) {
+              await addIncomingFiles(e.dataTransfer.files);
+            }
+          },
+          { signal },
+        );
+      }
+
       const updateProgress = () => {
         const data = new FormData(form);
-        const hasProduct = getCheckedProducts().length > 0;
         const checks = {
           material: Boolean(
-            hasProduct &&
-              String(data.get('quantity') || '').trim() &&
+            selectedFiles.length > 0 ||
+              getScheduleItems().length > 0 ||
+              String(data.get('quantity') || '').trim() ||
               String(data.get('specification') || '').trim(),
           ),
           project: Boolean(String(data.get('location') || '').trim()),
@@ -383,12 +577,27 @@ export default function ClientInteractions() {
       }
 
       updateProgress();
-      form.addEventListener('input', updateProgress, { signal });
-      form.addEventListener('change', updateProgress, { signal });
+      form.addEventListener(
+        'input',
+        () => {
+          clearMaterialValidity();
+          updateProgress();
+        },
+        { signal },
+      );
+      form.addEventListener(
+        'change',
+        () => {
+          clearMaterialValidity();
+          updateProgress();
+        },
+        { signal },
+      );
 
       let message = '';
       let mailSubject = '';
       let currentPayload = null;
+      let currentFiles = [];
 
       form.addEventListener(
         'submit',
@@ -396,16 +605,48 @@ export default function ClientInteractions() {
           e.preventDefault();
           const checked = getCheckedProducts();
           const firstBox = form.querySelector('input[name="product"]');
-          if (firstBox) {
-            firstBox.setCustomValidity(checked.length ? '' : 'Please select at least one product family.');
+          if (firstBox) firstBox.setCustomValidity('');
+
+          const data = new FormData(form);
+          const scheduleItems = getScheduleItems();
+          const rawQty = String(data.get('quantity') || '').trim();
+          const rawSpec = String(data.get('specification') || '').trim();
+          const specField = form.elements.specification;
+
+          if (specField) {
+            const hasAnyMaterial =
+              selectedFiles.length > 0 || scheduleItems.length > 0 || Boolean(rawQty) || Boolean(rawSpec);
+            specField.setCustomValidity(
+              hasAnyMaterial
+                ? ''
+                : 'Please upload a PDF/photo of your quotation or enter the materials you need.',
+            );
           }
           if (!form.reportValidity()) return;
 
-          const data = new FormData(form);
-          const productNames = checked
+          currentFiles = [...selectedFiles];
+          const checkedNames = checked
             .map((c) => c.closest('.pick__item')?.querySelector('.pick__name')?.textContent?.trim() || c.value)
             .join(', ');
-          const scheduleItems = getScheduleItems();
+          const productNames =
+            checkedNames || (currentFiles.length ? 'Uploaded Quotation / BoQ' : 'General Material Inquiry');
+
+          const effectiveQty =
+            rawQty ||
+            (currentFiles.length
+              ? `See attached (${currentFiles.length} ${currentFiles.length === 1 ? 'file' : 'files'})`
+              : scheduleItems.length
+                ? 'See itemised schedule'
+                : 'As per specification notes');
+
+          const effectiveSpec =
+            rawSpec ||
+            (currentFiles.length
+              ? `Please price according to attached quotation / material list: ${currentFiles.map((f) => f.name).join(', ')}`
+              : scheduleItems.length
+                ? 'See itemised material schedule'
+                : 'Standard stock specification — see requested quantity');
+
           const dateStamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
           const ref = `FM-${dateStamp}-${String(Math.floor(1000 + Math.random() * 9000))}`;
           mailSubject = `Fortimesh Quote Request [${ref}] — ${productNames}`;
@@ -414,10 +655,10 @@ export default function ClientInteractions() {
             reference: ref,
             product_family: productNames,
             schedule_items: scheduleItems.length ? scheduleItems.join(' | ') : 'See specification summary',
-            quantity: String(data.get('quantity') || ''),
-            specifications: String(data.get('specification') || ''),
+            quantity: effectiveQty,
+            specifications: effectiveSpec,
             delivery_location: String(data.get('location') || ''),
-            timeline: String(data.get('timeline') || 'To discuss'),
+            timeline: String(data.get('timeline') || '').trim() || 'To discuss',
             client_name: String(data.get('name') || ''),
             client_email: String(data.get('email') || '').trim(),
             reply_contact: String(data.get('contact') || ''),
@@ -431,12 +672,17 @@ export default function ClientInteractions() {
             `Total quantity: ${currentPayload.quantity}`,
             `Specifications: ${currentPayload.specifications}`,
           ];
+          if (currentFiles.length) {
+            lines.push('', `Attached files (${currentFiles.length}):`);
+            currentFiles.forEach((f, idx) => lines.push(`  ${idx + 1}. ${f.name} (${formatBytes(f.size)})`));
+          }
           if (scheduleItems.length) {
             lines.push('', 'Itemised schedule:');
             scheduleItems.forEach((item, idx) => lines.push(`  ${idx + 1}. ${item}`));
             lines.push('');
           }
           lines.push(
+            '',
             `Delivery / collection: ${currentPayload.delivery_location}`,
             `Timeline: ${currentPayload.timeline}`,
             '',
@@ -449,7 +695,9 @@ export default function ClientInteractions() {
           message = lines.join('\n');
 
           pre.textContent = message;
-          status.textContent = '';
+          status.textContent = currentFiles.length
+            ? `${currentFiles.length} file${currentFiles.length === 1 ? '' : 's'} attached — click "Submit online" above to email your quotation file${currentFiles.length === 1 ? '' : 's'} directly to our sales desk.`
+            : '';
           if (onlineBtn) {
             onlineBtn.disabled = false;
             const span = onlineBtn.querySelector('span:first-child');
@@ -476,13 +724,21 @@ export default function ClientInteractions() {
           const label = onlineBtn.querySelector('span:first-child');
           onlineBtn.disabled = true;
           if (label) label.textContent = 'Sending…';
-          status.textContent = 'Submitting your request to Fortimesh sales desk…';
+          status.textContent = currentFiles.length
+            ? `Uploading ${currentFiles.length} file${currentFiles.length === 1 ? '' : 's'} and sending to Fortimesh sales desk…`
+            : 'Submitting your request to Fortimesh sales desk…';
           try {
             const apiUrl = onlineBtn.dataset.api || '/api/quote';
+            const fd = new FormData();
+            for (const [k, v] of Object.entries(currentPayload)) {
+              fd.set(k, String(v ?? ''));
+            }
+            currentFiles.forEach((f) => fd.append('attachments', f, f.name));
+
             const apiRes = await fetch(apiUrl, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-              body: JSON.stringify(currentPayload),
+              headers: { Accept: 'application/json' },
+              body: fd,
             });
             const resJson = await apiRes.json().catch(() => ({}));
             if (!apiRes.ok || !resJson?.ok) {
@@ -494,10 +750,13 @@ export default function ClientInteractions() {
               throw serverError;
             }
             if (label) label.textContent = 'Submitted';
+            const attachNote = resJson.attachmentsReceived
+              ? ` (${resJson.attachmentsReceived} file${resJson.attachmentsReceived === 1 ? '' : 's'} attached)`
+              : '';
             status.textContent =
               resJson.confirmationSent && resJson.confirmationTo
-                ? `Request ${currentPayload.reference} sent to our Kigali sales desk — a confirmation email has also been sent to ${resJson.confirmationTo}. For immediate dispatch, also click Send on WhatsApp.`
-                : `Request ${currentPayload.reference} emailed to our Kigali sales desk. For immediate dispatch confirmation, also click Send on WhatsApp.`;
+                ? `Request ${currentPayload.reference}${attachNote} sent to our Kigali sales desk — a confirmation email has also been sent to ${resJson.confirmationTo}.`
+                : `Request ${currentPayload.reference}${attachNote} emailed to our Kigali sales desk.`;
           } catch (err) {
             onlineBtn.disabled = false;
             if (label) label.textContent = 'Submit online';
