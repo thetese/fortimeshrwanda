@@ -728,7 +728,7 @@ export default function ClientInteractions() {
             ? `Uploading ${currentFiles.length} file${currentFiles.length === 1 ? '' : 's'} and sending to Fortimesh sales desk…`
             : 'Submitting your request to Fortimesh sales desk…';
           try {
-            const apiUrl = onlineBtn.dataset.api || '/api/quote';
+            const apiUrl = onlineBtn.dataset.api || '/api/quote/';
             const fd = new FormData();
             for (const [k, v] of Object.entries(currentPayload)) {
               fd.set(k, String(v ?? ''));

@@ -112,9 +112,19 @@ export async function POST(request) {
       contentType.includes('multipart/form-data');
     wantsHtml = isFormSubmit && !accept.includes('application/json');
 
-    const rawBody = isFormSubmit
-      ? await request.formData()
-      : await request.json().catch(() => ({}));
+    let rawBody = {};
+    if (isFormSubmit) {
+      try {
+        rawBody = await request.formData();
+      } catch {
+        return NextResponse.json(
+          { ok: false, error: 'Invalid multipart form payload (ensure request targets /api/quote/).' },
+          { status: 400, headers: corsHeaders },
+        );
+      }
+    } else {
+      rawBody = await request.json().catch(() => ({}));
+    }
 
     const { attachments, attachmentError } = await extractAttachments(rawBody);
     if (attachmentError) {
