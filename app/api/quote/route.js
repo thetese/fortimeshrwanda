@@ -3,6 +3,7 @@ import {
   escapeHtml,
   isSmtpConfigured,
   normalizeQuotePayload,
+  resolveClientEmail,
   sendQuoteEmail,
   validateQuotePayload,
 } from '../../../lib/mailer.mjs';
@@ -15,6 +16,37 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Accept',
 };
+
+const RATE_WINDOW_MS = 10 * 60 * 1000;
+const MAX_REQUESTS_PER_IP = 8;
+const MAX_CONFIRMATIONS_PER_EMAIL = 4;
+const ipHits = new Map();
+const recipientHits = new Map();
+
+function countRecentHits(store, key, maxHits, now = Date.now()) {
+  if (!key) return { allowed: true };
+  if (store.size > 500) {
+    for (const [k, timestamps] of store.entries()) {
+      const fresh = timestamps.filter((t) => now - t < RATE_WINDOW_MS);
+      if (fresh.length) store.set(k, fresh);
+      else store.delete(k);
+    }
+  }
+  const recent = (store.get(key) || []).filter((t) => now - t < RATE_WINDOW_MS);
+  if (recent.length >= maxHits) {
+    store.set(key, recent);
+    return { allowed: false };
+  }
+  recent.push(now);
+  store.set(key, recent);
+  return { allowed: true };
+}
+
+function getClientIp(request) {
+  const forwarded = request.headers.get('x-forwarded-for');
+  if (forwarded) return forwarded.split(',')[0].trim();
+  return request.headers.get('x-real-ip')?.trim() || 'unknown';
+}
 
 function htmlResponse({ title, heading, message, reference, status = 200 }) {
   const refBadge = reference
@@ -61,6 +93,7 @@ export async function GET() {
       ok: true,
       provider: 'google-smtp',
       configured: isSmtpConfigured(),
+      clientConfirmation: true,
     },
     { status: 200, headers: corsHeaders },
   );
@@ -121,6 +154,25 @@ export async function POST(request) {
       );
     }
 
+    const clientIp = getClientIp(request);
+    if (clientIp !== 'unknown' && !countRecentHits(ipHits, clientIp, MAX_REQUESTS_PER_IP).allowed) {
+      const rateMsg =
+        'Too many quote submissions in a short period. Please wait a few minutes or message us on WhatsApp (+250 793 086 644).';
+      if (wantsHtml) {
+        return htmlResponse({
+          title: 'Too Many Requests',
+          heading: 'Please wait a moment before submitting again',
+          message: rateMsg,
+          reference: quote.reference,
+          status: 429,
+        });
+      }
+      return NextResponse.json(
+        { ok: false, error: rateMsg },
+        { status: 429, headers: corsHeaders },
+      );
+    }
+
     if (process.env.QUOTE_WEBHOOK_URL) {
       await fetch(process.env.QUOTE_WEBHOOK_URL, {
         method: 'POST',
@@ -151,9 +203,14 @@ export async function POST(request) {
       );
     }
 
+    const clientEmail = resolveClientEmail(quote)?.toLowerCase() || '';
+    const allowClientConfirmation = clientEmail
+      ? countRecentHits(recipientHits, clientEmail, MAX_CONFIRMATIONS_PER_EMAIL).allowed
+      : false;
+
     let info;
     try {
-      info = await sendQuoteEmail(quote);
+      info = await sendQuoteEmail(quote, { sendClientConfirmation: allowClientConfirmation });
     } catch (err) {
       console.error('[api/quote] Google SMTP send failed:', {
         code: err?.code || 'UNKNOWN',
@@ -177,11 +234,14 @@ export async function POST(request) {
     }
 
     if (wantsHtml) {
+      const confirmNote =
+        info.confirmationSent && info.confirmationTo
+          ? ` We also sent a confirmation copy to ${info.confirmationTo}.`
+          : '';
       return htmlResponse({
         title: 'Quote Request Sent',
         heading: 'Quote request sent to Fortimesh sales desk',
-        message:
-          'Your material request has been delivered by email to our Kigali sales desk. For immediate dispatch confirmation, message us on WhatsApp.',
+        message: `Your material request has been delivered by email to our Gisozi, Kigali sales desk.${confirmNote} For immediate dispatch confirmation, message us on WhatsApp.`,
         reference: quote.reference,
         status: 200,
       });
@@ -193,8 +253,13 @@ export async function POST(request) {
         provider: 'google-smtp',
         reference: quote.reference,
         messageId: info.messageId,
+        confirmationSent: info.confirmationSent,
+        confirmationTo: info.confirmationTo,
+        confirmationMessageId: info.confirmationMessageId,
         receivedAt: quote.submitted_at,
-        note: 'Quote request sent via Google SMTP.',
+        note: info.confirmationSent
+          ? `Quote request sent to sales desk and confirmation sent to ${info.confirmationTo}.`
+          : 'Quote request sent via Google SMTP.',
       },
       { status: 200, headers: corsHeaders },
     );

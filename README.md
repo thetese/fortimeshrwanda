@@ -30,7 +30,7 @@ SITE_ORIGIN=https://fortimesh.rw npm run build
 
 - Generates a timestamped quote reference (`FM-YYYYMMDD-XXXX`) with local draft autosave.
 - **Send on WhatsApp:** Opens a pre-filled WhatsApp chat to `+250 793 086 644`.
-- **Submit online:** Sends the structured quote request to `/api/quote`, which dispatches an HTML + plain-text email directly through Google SMTP (`nodemailer` via `lib/mailer.mjs`) to `QUOTE_INBOX_EMAIL` (default `fortimeshrwanda@gmail.com`), with progressive HTML form fallback when JavaScript is disabled.
+- **Submit online:** Sends the structured quote request to `/api/quote`, which dispatches a branded HTML + plain-text lead notification to `QUOTE_INBOX_EMAIL` (default `fortimeshrwanda@gmail.com`) **and** an instant branded confirmation receipt to the client's email via Google SMTP (`nodemailer` in `lib/mailer.mjs`), with progressive HTML form fallback when JavaScript is disabled.
 - **Open in email app / Copy / Share:** Direct `mailto:`, clipboard copy, and Web Share API support.
 
 ## Google SMTP configuration

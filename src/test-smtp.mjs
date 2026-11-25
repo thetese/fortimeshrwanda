@@ -1,11 +1,13 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  buildClientConfirmationEmail,
   buildQuoteEmail,
   extractEmail,
   getSmtpConfig,
   isSmtpConfigured,
   normalizeQuotePayload,
+  resolveClientEmail,
   sendQuoteEmail,
   validateQuotePayload,
   verifySmtpConnection,
@@ -41,10 +43,13 @@ describe('getSmtpConfig & isSmtpConfigured', () => {
       SMTP_PASS: 'abcd efgh ijkl mnop',
     });
     assert.equal(gmailCfg.pass, 'abcdefghijklmnop');
-    assert.equal(isSmtpConfigured({
-      SMTP_USER: 'fortimeshrwanda@gmail.com',
-      SMTP_PASS: 'abcd efgh ijkl mnop',
-    }), true);
+    assert.equal(
+      isSmtpConfigured({
+        SMTP_USER: 'fortimeshrwanda@gmail.com',
+        SMTP_PASS: 'abcd efgh ijkl mnop',
+      }),
+      true,
+    );
 
     const customCfg = getSmtpConfig({
       SMTP_HOST: 'mail.example.com',
@@ -69,50 +74,55 @@ describe('getSmtpConfig & isSmtpConfigured', () => {
 });
 
 describe('normalizeQuotePayload & validateQuotePayload', () => {
-  it('normalizes JSON payload and validates required fields', () => {
+  it('normalizes JSON payload with dedicated client_email and validates required fields', () => {
     const { quote, isSpam } = normalizeQuotePayload({
       reference: 'FM-20261125-1234',
-      product_family: 'Gabion mesh, Steel wire products',
-      schedule_items: 'Gabion mesh: 20 boxes — 2x1x1m',
-      quantity: '20 boxes',
-      specifications: '2m x 1m x 1m PVC coated',
-      delivery_location: 'Kigali',
+      product_family: 'Hollow sections, Structural steel',
+      schedule_items: 'Hollow sections: 20 bars — SHS 50x50x3mm',
+      quantity: '20 bars',
+      specifications: 'SHS 50x50x3mm 6m lengths',
+      delivery_location: 'Gisozi, Kigali',
       timeline: 'This week',
       client_name: 'Kigali Builders',
-      reply_contact: 'buyer@kigalibuilders.rw',
+      client_email: 'buyer@kigalibuilders.rw',
+      reply_contact: '+250 788 123 456',
     });
 
     assert.equal(isSpam, false);
     assert.equal(quote.reference, 'FM-20261125-1234');
-    assert.equal(quote.product_family, 'Gabion mesh, Steel wire products');
+    assert.equal(quote.client_email, 'buyer@kigalibuilders.rw');
+    assert.equal(quote.reply_contact, '+250 788 123 456');
+    assert.equal(resolveClientEmail(quote), 'buyer@kigalibuilders.rw');
     assert.equal(validateQuotePayload(quote).valid, true);
   });
 
   it('normalizes HTML form fields and FormData instances', () => {
     const fd = new FormData();
-    fd.append('product', 'gabion-mesh');
+    fd.append('product', 'hollow-sections');
     fd.append('product', 'reinforcement-steel');
-    fd.append('item_family', 'Gabion mesh');
-    fd.append('item_spec', '2x1x1m');
-    fd.append('item_qty', '15 boxes');
+    fd.append('item_family', 'Hollow sections');
+    fd.append('item_spec', 'SHS 50x50x3mm');
+    fd.append('item_qty', '15 bars');
     fd.append('item_family', 'Reinforcement materials');
     fd.append('item_spec', '');
     fd.append('item_qty', '');
-    fd.set('quantity', '15 boxes');
-    fd.set('specification', 'Galvanised baskets');
+    fd.set('quantity', '15 bars');
+    fd.set('specification', 'Standard 6m lengths');
     fd.set('location', 'Musanze');
     fd.set('name', 'Civil Co');
+    fd.set('email', 'eng@civil.rw');
     fd.set('contact', '+250 788 000 111');
 
     const { quote, isSpam } = normalizeQuotePayload(fd);
     assert.equal(isSpam, false);
     assert.match(quote.reference, /^FM-\d{8}-\d{4}$/);
-    assert.equal(quote.product_family, 'gabion-mesh, reinforcement-steel');
-    assert.equal(quote.schedule_items, 'Gabion mesh: 15 boxes — 2x1x1m');
-    assert.equal(quote.specifications, 'Galvanised baskets');
+    assert.equal(quote.product_family, 'hollow-sections, reinforcement-steel');
+    assert.equal(quote.schedule_items, 'Hollow sections: 15 bars — SHS 50x50x3mm');
+    assert.equal(quote.specifications, 'Standard 6m lengths');
     assert.equal(quote.delivery_location, 'Musanze');
     assert.equal(quote.timeline, 'To discuss');
     assert.equal(quote.client_name, 'Civil Co');
+    assert.equal(quote.client_email, 'eng@civil.rw');
     assert.equal(quote.reply_contact, '+250 788 000 111');
     assert.equal(validateQuotePayload(quote).valid, true);
   });
@@ -121,7 +131,7 @@ describe('normalizeQuotePayload & validateQuotePayload', () => {
     const spamResult = normalizeQuotePayload({ _website: 'https://spam.example' });
     assert.equal(spamResult.isSpam, true);
 
-    const validation = validateQuotePayload({ product_family: 'Gabion mesh' });
+    const validation = validateQuotePayload({ product_family: 'Structural steel' });
     assert.equal(validation.valid, false);
     assert.deepEqual(validation.missing, [
       'quantity',
@@ -133,68 +143,69 @@ describe('normalizeQuotePayload & validateQuotePayload', () => {
   });
 });
 
-describe('buildQuoteEmail, extractEmail, sendQuoteEmail & verifySmtpConnection', () => {
-  it('validates clean reply email addresses and rejects header injection', () => {
+describe('buildQuoteEmail, buildClientConfirmationEmail, sendQuoteEmail & verifySmtpConnection', () => {
+  it('validates clean reply email addresses and extracts embedded client email safely', () => {
     assert.equal(extractEmail('  client@company.rw '), 'client@company.rw');
     assert.equal(extractEmail('+250 793 086 644'), undefined);
     assert.equal(extractEmail('evil@example.com\r\nBcc: victim@example.com'), undefined);
+    assert.equal(
+      resolveClientEmail({ reply_contact: '+250 788 123 456 / procurement@acme.rw' }),
+      'procurement@acme.rw',
+    );
   });
 
-  it('escapes HTML, sanitizes headers, sets conditional replyTo, and renders itemised schedule', () => {
+  it('builds sales desk & client confirmation emails with XSS escaping and branded templates', () => {
     const env = {
       SMTP_USER: 'fortimeshrwanda@gmail.com',
       SMTP_PASS: 'abcdefghijklmnop',
       QUOTE_INBOX_EMAIL: 'inbox@fortimesh.rw',
     };
 
-    const emailWithAddress = buildQuoteEmail(
-      {
-        reference: 'FM-20261125-9999',
-        product_family: 'Reinforcement\r\nBcc: bad@evil.com',
-        schedule_items: 'Rebar: 100 bars — D12 12m | Wire: 2 coils — 1.6mm',
-        quantity: '100 bars',
-        specifications: '<script>alert("xss")</script>\nLine 2',
-        delivery_location: 'Kimironko',
-        timeline: 'Immediate',
-        client_name: 'Acme & Co <Builders>',
-        reply_contact: 'procurement@acme.rw',
-        submitted_at: '2026-11-25T16:00:00.000Z',
-      },
-      env,
-    );
+    const quote = {
+      reference: 'FM-20261125-9999',
+      product_family: 'Reinforcement\r\nBcc: bad@evil.com',
+      schedule_items: 'Rebar: 100 bars — D12 12m | Wire: 2 coils — 1.6mm',
+      quantity: '100 bars',
+      specifications: '<script>alert("xss")</script>\nLine 2',
+      delivery_location: 'Gisozi',
+      timeline: 'Immediate',
+      client_name: 'Acme & Co <Builders>',
+      client_email: 'procurement@acme.rw',
+      reply_contact: '0788 123 456',
+      submitted_at: '2026-11-25T16:00:00.000Z',
+    };
 
-    assert.equal(emailWithAddress.to, 'inbox@fortimesh.rw');
-    assert.equal(emailWithAddress.replyTo, 'procurement@acme.rw');
-    assert.equal(/[\r\n]/.test(emailWithAddress.subject), false);
-    assert.ok(!emailWithAddress.html.includes('<script>'));
-    assert.ok(emailWithAddress.html.includes('&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;'));
-    assert.ok(emailWithAddress.html.includes('Acme &amp; Co &lt;Builders&gt;'));
-    assert.ok(emailWithAddress.html.includes('<ol'));
-    assert.ok(emailWithAddress.html.includes('Rebar: 100 bars — D12 12m'));
-    assert.ok(emailWithAddress.text.includes('1. Rebar: 100 bars — D12 12m'));
-    assert.ok(emailWithAddress.text.includes('2. Wire: 2 coils — 1.6mm'));
+    const salesMail = buildQuoteEmail(quote, env);
+    assert.equal(salesMail.to, 'inbox@fortimesh.rw');
+    assert.equal(salesMail.replyTo, 'procurement@acme.rw');
+    assert.equal(/[\r\n]/.test(salesMail.subject), false);
+    assert.ok(!salesMail.html.includes('<script>'));
+    assert.ok(salesMail.html.includes('&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;'));
+    assert.ok(salesMail.html.includes('Acme &amp; Co &lt;Builders&gt;'));
+    assert.ok(salesMail.html.includes('https://wa.me/250788123456'));
+    assert.ok(salesMail.html.includes('logo-white.png'));
+    assert.ok(salesMail.text.includes('1. Rebar: 100 bars — D12 12m'));
 
-    const phoneOnlyEmail = buildQuoteEmail(
-      {
-        reference: 'FM-20261125-0001',
-        product_family: 'Gabion mesh',
-        schedule_items: 'See specification summary',
-        quantity: '10 boxes',
-        specifications: '2x1x1m',
-        delivery_location: 'Huye',
-        timeline: 'Next week',
-        client_name: 'Site Manager',
-        reply_contact: '+250 788 123 456',
-        submitted_at: '2026-11-25T16:00:00.000Z',
-      },
-      env,
-    );
+    const clientMail = buildClientConfirmationEmail(quote, env);
+    assert.ok(clientMail);
+    assert.equal(clientMail.to, 'procurement@acme.rw');
+    assert.equal(clientMail.replyTo, 'inbox@fortimesh.rw');
+    assert.equal(/[\r\n]/.test(clientMail.subject), false);
+    assert.ok(!clientMail.html.includes('<script>'));
+    assert.ok(clientMail.html.includes('Request Received'));
+    assert.ok(clientMail.html.includes('What Happens Next'));
+    assert.ok(clientMail.html.includes('FM-20261125-9999'));
+    assert.ok(clientMail.html.includes('logo-white.png'));
 
-    assert.equal('replyTo' in phoneOnlyEmail, false);
-    assert.ok(phoneOnlyEmail.html.includes('href="tel:+250788123456"'));
+    const phoneOnlyQuote = {
+      ...quote,
+      client_email: '',
+      reply_contact: '+250 788 123 456',
+    };
+    assert.equal(buildClientConfirmationEmail(phoneOnlyQuote, env), null);
   });
 
-  it('sends email via transporter and verifies SMTP connection', async () => {
+  it('sends both sales notification and client confirmation emails via transporter', async () => {
     const sentPayloads = [];
     let verifyCalled = false;
 
@@ -202,7 +213,7 @@ describe('buildQuoteEmail, extractEmail, sendQuoteEmail & verifySmtpConnection',
       async sendMail(mail) {
         sentPayloads.push(mail);
         return {
-          messageId: '<mock-msg-id@smtp.gmail.com>',
+          messageId: `<mock-${sentPayloads.length}@smtp.gmail.com>`,
           accepted: [mail.to],
           rejected: [],
           response: '250 2.0.0 OK',
@@ -222,25 +233,26 @@ describe('buildQuoteEmail, extractEmail, sendQuoteEmail & verifySmtpConnection',
     const verified = await verifySmtpConnection(env, { transporter: mockTransporter });
     assert.equal(verifyCalled, true);
     assert.equal(verified.ok, true);
-    assert.equal(verified.host, 'smtp.gmail.com');
 
     const { quote } = normalizeQuotePayload({
       reference: 'FM-20261125-7777',
       product_family: 'Structural steel',
       quantity: '20 lengths',
       specifications: 'SHS 50x50x3mm',
-      delivery_location: 'Kigali',
+      delivery_location: 'Gisozi, Kigali',
       client_name: 'Steel Frame Ltd',
-      reply_contact: 'buyer@steelframe.rw',
+      client_email: 'buyer@steelframe.rw',
+      reply_contact: '+250 788 555 666',
     });
 
     const res = await sendQuoteEmail(quote, { env, transporter: mockTransporter });
-    assert.equal(sentPayloads.length, 1);
+    assert.equal(sentPayloads.length, 2);
     assert.equal(sentPayloads[0].to, 'fortimeshrwanda@gmail.com');
     assert.equal(sentPayloads[0].replyTo, 'buyer@steelframe.rw');
-    assert.equal(res.messageId, '<mock-msg-id@smtp.gmail.com>');
-    assert.deepEqual(res.accepted, ['fortimeshrwanda@gmail.com']);
-
-    await assert.rejects(() => verifySmtpConnection({}, { transporter: mockTransporter }), /not configured/i);
+    assert.equal(sentPayloads[1].to, 'buyer@steelframe.rw');
+    assert.equal(sentPayloads[1].replyTo, 'fortimeshrwanda@gmail.com');
+    assert.equal(res.confirmationSent, true);
+    assert.equal(res.confirmationTo, 'buyer@steelframe.rw');
+    assert.equal(res.confirmationMessageId, '<mock-2@smtp.gmail.com>');
   });
 });

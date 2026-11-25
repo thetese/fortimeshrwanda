@@ -295,7 +295,11 @@ export default function ClientInteractions() {
               String(data.get('specification') || '').trim(),
           ),
           project: Boolean(String(data.get('location') || '').trim()),
-          contact: Boolean(String(data.get('name') || '').trim() && String(data.get('contact') || '').trim()),
+          contact: Boolean(
+            String(data.get('name') || '').trim() &&
+              String(data.get('email') || '').trim() &&
+              String(data.get('contact') || '').trim(),
+          ),
         };
         for (const [key, done] of Object.entries(checks)) {
           document.querySelector(`[data-progress="${key}"]`)?.classList.toggle('is-done', done);
@@ -308,6 +312,7 @@ export default function ClientInteractions() {
             specification: String(data.get('specification') || ''),
             location: String(data.get('location') || ''),
             name: String(data.get('name') || ''),
+            email: String(data.get('email') || ''),
             contact: String(data.get('contact') || ''),
           };
           localStorage.setItem(storageKey, JSON.stringify(draft));
@@ -355,7 +360,7 @@ export default function ClientInteractions() {
             if (box) box.checked = true;
           });
         }
-        for (const k of ['quantity', 'timeline', 'specification', 'location', 'name', 'contact']) {
+        for (const k of ['quantity', 'timeline', 'specification', 'location', 'name', 'email', 'contact']) {
           if (typeof saved[k] === 'string' && form.elements[k]) {
             form.elements[k].value = saved[k];
           }
@@ -414,6 +419,7 @@ export default function ClientInteractions() {
             delivery_location: String(data.get('location') || ''),
             timeline: String(data.get('timeline') || 'To discuss'),
             client_name: String(data.get('name') || ''),
+            client_email: String(data.get('email') || '').trim(),
             reply_contact: String(data.get('contact') || ''),
             _website: String(data.get('_website') || ''),
           };
@@ -435,8 +441,11 @@ export default function ClientInteractions() {
             `Timeline: ${currentPayload.timeline}`,
             '',
             `From: ${currentPayload.client_name}`,
-            `Reply contact: ${currentPayload.reply_contact}`,
+            `Phone / WhatsApp: ${currentPayload.reply_contact}`,
           );
+          if (currentPayload.client_email) {
+            lines.push(`Email: ${currentPayload.client_email}`);
+          }
           message = lines.join('\n');
 
           pre.textContent = message;
@@ -485,7 +494,10 @@ export default function ClientInteractions() {
               throw serverError;
             }
             if (label) label.textContent = 'Submitted';
-            status.textContent = `Request ${currentPayload.reference} emailed to our Kigali sales desk. For immediate dispatch confirmation, also click Send on WhatsApp.`;
+            status.textContent =
+              resJson.confirmationSent && resJson.confirmationTo
+                ? `Request ${currentPayload.reference} sent to our Kigali sales desk — a confirmation email has also been sent to ${resJson.confirmationTo}. For immediate dispatch, also click Send on WhatsApp.`
+                : `Request ${currentPayload.reference} emailed to our Kigali sales desk. For immediate dispatch confirmation, also click Send on WhatsApp.`;
           } catch (err) {
             onlineBtn.disabled = false;
             if (label) label.textContent = 'Submit online';
